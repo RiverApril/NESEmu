@@ -1,0 +1,8 @@
+
+*.xcodeproj/*
+
+*.xcbkptlist
+
+*.xcscheme
+
+*.plist
