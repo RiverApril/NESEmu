@@ -10,23 +10,23 @@ using namespace std;
 
 Chip chip;
 
-void printMemory(unsigned char* memory, unsigned short memoryMin, unsigned short memoryMax){
-    for(int i=memoryMin;i<memoryMax;i++){
+void printMemory(unsigned char* memory, unsigned int memoryMin, unsigned int memoryMax){
+    for(unsigned int i=memoryMin;i<memoryMax;i++){
         printf("%02x ", chip.memory[i]);
     }
     printf("\n");
 }
 
-bool loadFile(const char* path, unsigned char* memory, unsigned short memorySize){
+bool loadFile(const char* path, unsigned char* memory, unsigned int memorySize){
     ifstream file;
     file.open(path, ios::binary | ios::in);
     char buffer[memorySize];
     file.read(buffer, memorySize);
     file.close();
-    for(unsigned short i=0;i<memorySize;i++){
+    for(unsigned int i=0;i<memorySize;i++){
         memory[i] = (unsigned char)buffer[i];
     }
-    //memory = reinterpret_cast<unsigned char*>(buffer);
+    return true;
 }
 
 int main(int argc, const char * argv[]) {

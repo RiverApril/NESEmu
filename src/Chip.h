@@ -17,25 +17,46 @@
 #define modeIndirectY 0x10
 #define modeIndirect 0x2C
 
-#define byteAfterOpcode memory[pc+1]
-#define byte2AfterOpcode memory[pc+2]
+#define byteAfterOpcode getMemory(pc+1)
+#define byte2AfterOpcode getMemory(pc+2)
 
 
 #define memAccumulator A
 
 #define memImmediate byteAfterOpcode|A
-#define memZeroPage memory[byteAfterOpcode]
-#define memZeroPageX memory[(byteAfterOpcode+X) & 0xFF]
-#define memAbsolute memory[byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4)]
-#define memAbsoluteX memory[((byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4))+X) & 0xFFFF]
-#define memAbsoluteY memory[((byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4))+Y) & 0xFFFF]
 
-#define memIndirectXHelp memory[((byteAfterOpcode+X) & 0xFF)]
-#define memIndirectX memory[memory[memIndirectXHelp] | ((unsigned short)memory[memIndirectXHelp+1] << 4)]
+#define addressZeroPage byteAfterOpcode
+#define getMemZeroPage getMemory(addressZeroPage)
+#define setMemZeroPage(a) setMemory(addressZeroPage, a)
 
-#define memIndirectY memory[(((memory[byteAfterOpcode]) | ((unsigned short)memory[byte2AfterOpcode] << 4)) + Y) & 0xFFFF]
+#define addressZeroPageX ((byteAfterOpcode+X) & 0xFF)
+#define getMemZeroPageX getMemory(addressZeroPageX)
+#define setMemZeroPageX(a) setMemory(addressZeroPageX, a)
 
-#define memIndirect memory[((memory[byteAfterOpcode]) | ((unsigned short)memory[byte2AfterOpcode] << 4)) & 0xFFFF]
+#define addressAbsolute (byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4))
+#define getMemAbsolute getMemory(addressAbsolute)
+#define setMemAbsolute(a) setMemory(addressAbsolute, a)
+
+#define addressAbsoluteX (((byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4))+X) & 0xFFFF)
+#define getMemAbsoluteX getMemory(addressAbsoluteX)
+#define setMemAbsoluteX(a) setMemory(addressAbsoluteX, a)
+
+#define addressAbsoluteY getMemory(((byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4))+Y) & 0xFFFF)
+#define getMemAbsoluteY getMemory(addressAbsoluteY)
+#define setMemAbsoluteY(a) setMemory(addressAbsoluteY, a)
+
+#define memIndirectXHelp getMemory(((byteAfterOpcode+X) & 0xFF))
+#define addressIndirectX (getMemory(memIndirectXHelp) | ((unsigned short)getMemory(memIndirectXHelp+1) << 4))
+#define getMemIndirectX getMemory(addressIndirectX)
+#define setMemIndirectX(a) setMemory(addressIndirectX, a)
+
+#define addressIndirectY ((((getMemory(byteAfterOpcode)) | ((unsigned short)getMemory(byte2AfterOpcode) << 4)) + Y) & 0xFFFF)
+#define getMemIndirectY getMemory(addressIndirectY)
+#define setMemIndirectY(a) setMemory(addressIndirectY, a)
+
+#define addressIndirect (((getMemory(byteAfterOpcode)) | ((unsigned short)getMemory(byte2AfterOpcode) << 4)) & 0xFFFF)
+#define getMemIndirect getMemory(addressIndirect)
+#define setMemIndirect(a) getMemory(addressIndirect, a)
 
 
 
@@ -127,22 +148,38 @@ public:
     bool I = false;
     
     
-    const static unsigned short memorySize = 0x1000;
+    const static unsigned int memorySize = 0x10000;
     
     unsigned char memory[memorySize] = {0};
     
     
     std::stack<unsigned short> pcStack;
     
+    unsigned char getMemory(unsigned short address){
+        if(address < 0x2000){
+            return memory[address % 0x800];
+        }else if(address >= 0x2000 && address < 0x4000){
+            return memory[(address % 8) + 0x800];
+        }else{
+            return memory[address];
+        }
+    }
     
+    void setMemory(unsigned short address, unsigned char value){
+        if(address < 0x2000){
+            memory[address % 0x800] = value;
+        }else if(address >= 0x2000 && address < 0x4000){
+            memory[address % 8] = value;
+        }
+    }
     
     const unsigned short mem_AB_I(unsigned char mode){
         switch (mode) {
             case modeAbsolute:
-                return memAbsolute;
+                return getMemAbsolute;
                 
             case modeIndirect:
-                return memIndirect;
+                return getMemIndirect;
                 
             default:
                 printf("Error (undefined mode): %d", (int)mode);
@@ -156,25 +193,25 @@ public:
                 return memImmediate;
                 
             case modeZeroPage:
-                return memZeroPage;
+                return getMemZeroPage;
                 
             case modeZeroPageX:
-                return memZeroPageX;
+                return getMemZeroPageX;
                 
             case modeAbsolute:
-                return memAbsolute;
+                return getMemAbsolute;
                 
             case modeAbsoluteX:
-                return memAbsoluteX;
+                return getMemAbsoluteX;
                 
             case modeAbsoluteY:
-                return memAbsoluteY;
+                return getMemAbsoluteY;
                 
             case modeIndirectX:
-                return memIndirectX;
+                return getMemIndirectX;
                 
             case modeIndirectY:
-                return memIndirectY;
+                return getMemIndirectY;
                 
             default:
                 printf("Error (undefined mode): %d", (int)mode);
@@ -188,10 +225,10 @@ public:
                 return memImmediate;
                 
             case modeZeroPage:
-                return memZeroPage;
+                return getMemZeroPage;
                 
             case modeAbsolute:
-                return memAbsolute;
+                return getMemAbsolute;
                 
             default:
                 printf("Error (undefined mode): %d", (int)mode);
@@ -205,16 +242,16 @@ public:
                 return memAccumulator;
                 
             case modeZeroPage:
-                return memZeroPage;
+                return getMemZeroPage;
                 
             case modeZeroPageX:
-                return memZeroPageX;
+                return getMemZeroPageX;
                 
             case modeAbsolute:
-                return memAbsolute;
+                return getMemAbsolute;
                 
             case modeAbsoluteX:
-                return memAbsoluteX;
+                return getMemAbsoluteX;
                 
             default:
                 printf("Error (undefined mode): %d", (int)mode);
@@ -229,19 +266,19 @@ public:
                 break;
                 
             case modeZeroPage:
-                memZeroPage = value;
+                setMemZeroPage(value);
                 break;
                 
             case modeZeroPageX:
-                memZeroPageX = value;
+                setMemZeroPageX(value);
                 break;
                 
             case modeAbsolute:
-                memAbsolute = value;
+                setMemAbsolute(value);
                 break;
                 
             case modeAbsoluteX:
-                memAbsoluteX = value;
+                setMemAbsoluteX(value);
                 break;
                 
             default:
@@ -306,7 +343,7 @@ public:
     }
     
     int executeNextOpcode(){
-        unsigned char opcode = memory[pc];
+        unsigned char opcode = getMemory(pc);
         
         printf("Executing opcode 0x%x\n", opcode);
         
