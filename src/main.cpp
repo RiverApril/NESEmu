@@ -30,7 +30,12 @@ bool loadFile(const char* path, unsigned char* memory, unsigned int memorySize){
 }
 
 int main(int argc, const char * argv[]) {
-    loadFile("testFile", chip.memory, chip.memorySize);
+    const char* path = "testFile";
+    if(argc > 1){
+        path = argv[1];
+    }
+    printf("Loading program: '%s'", path);
+    loadFile(path, chip.memory, chip.memorySize);
     int exitCode = EXIT_CODE_NONE;
     while(exitCode == EXIT_CODE_NONE){
         printf("\npc: 0x%x    ", chip.pc);

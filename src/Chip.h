@@ -5,17 +5,28 @@
 #include <stdio.h>
 #include <stack>
 
+
 #define modeAccumulator 0x08
 #define modeImmediate 0x08
 #define modeImmediate2 0x00
 #define modeZeroPage 0x04
+#define modeZeroPage2 0x00
 #define modeZeroPageX 0x14
+#define modeZeroPageX2 0x10
+#define modeZeroPageY 0x14
+#define modeZeroPageY2 0x10
 #define modeAbsolute 0x0C
+#define modeAbsolute2 0x08
 #define modeAbsoluteX 0x1C
 #define modeAbsoluteY 0x18
+#define modeAbsoluteY2 0x1C
 #define modeIndirectX 0x00
 #define modeIndirectY 0x10
 #define modeIndirect 0x2C
+
+
+
+
 
 #define byteAfterOpcode getMemory(pc+1)
 #define byte2AfterOpcode getMemory(pc+2)
@@ -32,6 +43,10 @@
 #define addressZeroPageX ((byteAfterOpcode+X) & 0xFF)
 #define getMemZeroPageX getMemory(addressZeroPageX)
 #define setMemZeroPageX(a) setMemory(addressZeroPageX, a)
+
+#define addressZeroPageY ((byteAfterOpcode+Y) & 0xFF)
+#define getMemZeroPageY getMemory(addressZeroPageY)
+#define setMemZeroPageY(a) setMemory(addressZeroPageY, a)
 
 #define addressAbsolute (byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4))
 #define getMemAbsolute getMemory(addressAbsolute)
@@ -62,13 +77,21 @@
 
 #define caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(a) case a+modeImmediate: case a+modeZeroPage: case a+modeZeroPageX: case a+modeAbsolute: case a+modeAbsoluteX: case a+modeAbsoluteY: case a+modeIndirectX: case a+modeIndirectY
 
+#define caseModes_ZP_ZPX_AB_ABX_ABY_IX_IY(a) case a+modeZeroPage: case a+modeZeroPageX: case a+modeAbsolute: case a+modeAbsoluteX: case a+modeAbsoluteY: case a+modeIndirectX: case a+modeIndirectY
+
 #define caseModes_A_ZP_ZPX_AB_ABX(a) case a+modeAccumulator: case a+modeZeroPage: case a+modeZeroPageX: case a+modeAbsolute: case a+modeAbsoluteX
+
+#define caseModes_A_ZP_ZPY_AB_ABY(a) case a+modeAccumulator: case a+modeZeroPage: case a+modeZeroPageY: case a+modeAbsolute: case a+modeAbsoluteY2
 
 #define caseModes_ZP_AB(a) case a+modeZeroPage: case a+modeAbsolute
 
 #define caseModes_I_ZP_AB(a) case a+modeImmediate2: case a+modeZeroPage: case a+modeAbsolute
 
 #define caseModes_ZP_ZPX_AB_ABX(a) case a+modeZeroPage: case a+modeZeroPageX: case a+modeAbsolute: case a+modeAbsoluteX
+
+#define codeModes_ZP_ZPY_AB(a) case a+modeZeroPage2: case a+modeZeroPageY2: case a+modeAbsolute2
+
+#define codeModes_ZP_ZPX_AB(a) case a+modeZeroPage2: case a+modeZeroPageX2: case a+modeAbsolute2
 
 #define caseModes_AB_I(a) case a+modeAbsolute: case a+modeIndirect
 
@@ -86,8 +109,9 @@
 #define codeBNE 0xD0
 #define codeBEQ 0xF0
 
-#define codeBIT 0x20
 #define codeBRK 0x00
+
+#define codeBIT 0x20
 #define codeCMP 0xC1
 #define codeCPX 0xE0
 #define codeCPY 0xC0
@@ -109,11 +133,40 @@
 
 #define codeJMP 0x40
 #define codeJSR 0x20
+#define codeRTI 0x40
 #define codeRTS 0x60
+#define codeLDA 0xA1
+#define codeLDX 0xA2
+#define codeLDY 0xA0
+#define codeLSR 0x42
 
-#define EXIT_CODE_NONE -1
-#define EXIT_CODE_BREAK 0
-#define EXIT_CODE_ERROR 1
+#define codeNOP 0xEA
+
+#define codeORA 0x01
+
+#define codePHA 0x48
+#define codePHP 0x08
+#define codePLA 0x68
+#define codePLP 0x28
+#define codeROL 0x22
+#define codeROR 0x62
+#define codeSBC 0xE1
+
+#define codeSTA 0x81
+#define codeSTX 0x86
+#define codeSTY 0x84
+
+#define codeTAX 0xAA
+#define codeTAY 0xA8
+#define codeTSX 0xBA
+#define codeTXA 0x8A
+#define codeTXS 0x9A
+#define codeTYA 0x98
+
+#define EXIT_BREAK 0
+#define EXIT_ERR_UNKNOWN_OPCODE 1
+#define EXIT_ERR_STACK_OVERFLOW 2
+#define EXIT_ERR_STACK_UNDERFLOW 3
 
 class Chip{
     
@@ -152,8 +205,8 @@ public:
     
     unsigned char memory[memorySize] = {0};
     
-    
-    std::stack<unsigned short> pcStack;
+    unsigned char stackPointer = 0;
+    unsigned char stack[0x100] = {0};
     
     unsigned char getMemory(unsigned short address){
         if(address < 0x2000){
@@ -236,6 +289,38 @@ public:
         }
     }
     
+    const unsigned char mem_ZP_ZPX_AB(unsigned char mode){
+        switch (mode) {
+            case modeZeroPage2:
+                return getMemZeroPage2;
+                
+            case modeZeroPageX2:
+                return getMemZeroPageX2;
+                
+            case modeAbsolute2:
+                return getMemAbsolute2;
+                
+            default:
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    const unsigned char mem_ZP_ZPY_AB(unsigned char mode){
+        switch (mode) {
+            case modeZeroPage2:
+                return getMemZeroPage2;
+                
+            case modeZeroPageY2:
+                return getMemZeroPageY2;
+                
+            case modeAbsolute2:
+                return getMemAbsolute2;
+                
+            default:
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
     const unsigned char mem_A_ZP_ZPX_AB_ABX(unsigned char mode){
         switch (mode) {
             case modeAccumulator:
@@ -254,8 +339,7 @@ public:
                 return getMemAbsoluteX;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
-                return 0;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
@@ -279,6 +363,43 @@ public:
                 
             case modeAbsoluteX:
                 setMemAbsoluteX(value);
+                break;
+                
+            default:
+                printf("Error (undefined mode): %d", (int)mode);
+                break;
+        }
+    }
+    
+    void setmem_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode, unsigned char value){
+        switch (mode) {
+                
+            case modeZeroPage:
+                setMemZeroPage(value);
+                break;
+                
+            case modeZeroPageX:
+                setMemZeroPageX(value);
+                break;
+                
+            case modeAbsolute:
+                setMemAbsolute(value);
+                break;
+                
+            case modeAbsoluteX:
+                setMemAbsoluteX(value);
+                break;
+                
+            case modeAbsoluteY:
+                setMemAbsoluteY(value);
+                break;
+                
+            case modeIndirectX:
+                setMemIndirectX(value);
+                break;
+                
+            case modeIndirectY:
+                setMemIndirectY(value);
                 break;
                 
             default:
@@ -342,8 +463,26 @@ public:
         }
     }
     
+    void pushToStack(unsigned char value){
+        stack[stackPointer] = value;
+        if(stackPointer < 0xFF){
+            stackPointer++;
+        }else{
+            throw EXIT_ERR_STACK_OVERFLOW;
+        }
+    }
+    
+    unsigned char popFromStack(){
+        if(stackPointer > 0){
+            stackPointer--;
+        }else{
+            throw EXIT_ERR_STACK_UNDERFLOW;
+        }
+        return stack[stackPointer+1];
+    }
+    
     int executeNextOpcode(){
-        unsigned char opcode = getMemory(pc);
+        unsigned char opcode = memory[pc];
         
         printf("Executing opcode 0x%x\n", opcode);
         
@@ -351,32 +490,34 @@ public:
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeADC):{
                 unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC) + C;
-                C = ((unsigned short)m+A) > 0xFF;
-                V = ((unsigned short)m+A) > 0x7F;
-                A = m + A;
+                unsigned short temp = m + A + C;
+                C = temp > 0xFF;
+                V = temp > 0x7F;
+                A = (unsigned char)temp;
                 Z = !A;//is 0
-                N = A & 0x80;//the msb bit is set
+                N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC);
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeAND):{
                 unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeAND);
                 A = m & A;
                 Z = !A;
-                N = A & 0x80;
+                N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeAND);
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_A_ZP_ZPX_AB_ABX(codeASL):{
                 unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeASL);
                 C = m & 0x80;
-                Z = !(m << 1);
-                N = (m & 0x80);
-                setmem_A_ZP_ZPX_AB_ABX(opcode - codeASL, m << 1);
+                m = m << 1;
+                Z = !m;
+                N = (m & 0x80) >> 7;
+                setmem_A_ZP_ZPX_AB_ABX(opcode - codeASL, m);
                 pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeASL);
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBPL:{
@@ -385,7 +526,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBMI:{
@@ -394,7 +535,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBVC:{
@@ -403,7 +544,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBVS:{
@@ -412,7 +553,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBCC:{
@@ -421,7 +562,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBCS:{
@@ -430,7 +571,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBNE:{
@@ -439,7 +580,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBEQ:{
@@ -448,17 +589,17 @@ public:
                 }else{
                     pc += 2;
                 }
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_ZP_AB(codeBIT):{
                 unsigned short m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeBIT);
                 m += A;
                 V = m > 0x7F;
-                N = m & 0x80;
+                N = (m & 0x80) >> 7;
                 Z = true;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeBIT);
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeBRK:{
@@ -469,146 +610,351 @@ public:
                 unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCMP);
                 C = A >= m;
                 Z = !(A-m);//TODO figure out if this is correct
-                N = (A-m) & 0x80;//TODO figure out if this is correct
+                N = ((A-m) & 0x80) >> 7;//TODO figure out if this is correct
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCMP);
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_I_ZP_AB(codeCPX):{
                 unsigned char m = mem_I_ZP_AB(opcode - codeCPX);
                 C = X >= m;
                 Z = !(X-m);//TODO figure out if this is correct
-                N = (X-m) & 0x80;//TODO figure out if this is correct
+                N = ((X-m) & 0x80) >> 7;//TODO figure out if this is correct
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCPX);
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_I_ZP_AB(codeCPY):{
                 unsigned char m = mem_I_ZP_AB(opcode - codeCPY);
                 C = Y >= m;
                 Z = !(Y-m);//TODO figure out if this is correct
-                N = (Y-m) & 0x80;//TODO figure out if this is correct
+                N = ((Y-m) & 0x80) >> 7;//TODO figure out if this is correct
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCPY);
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_ZP_ZPX_AB_ABX(codeDEC):{
                 unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeDEC);
                 setmem_A_ZP_ZPX_AB_ABX(opcode - codeDEC, m-1);
                 Z = !(m-1);
-                N = (m-1) & 0x80;
+                N = ((m-1) & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeDEC);
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeDEX:{
                 X -= 1;
                 Z = !(X);
-                N = (X) & 0x80;
+                N = ((X) & 0x80) >> 7;
                 pc ++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeDEY:{
                 Y -= 1;
                 Z = !(Y);
-                N = (Y) & 0x80;
+                N = ((Y) & 0x80) >> 7;
                 pc ++;
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeEOR):{
                 unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeEOR);
                 A = m ^ A;
                 Z = !A;
-                N = A & 0x80;
+                N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeEOR);
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_ZP_ZPX_AB_ABX(codeINC):{
                 unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeINC);
                 setmem_A_ZP_ZPX_AB_ABX(opcode - codeINC, m+1);
                 Z = !(m+1);
-                N = (m+1) & 0x80;
+                N = ((m+1) & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeINC);
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeINX:{
                 X += 1;
                 Z = !(X);
-                N = (X) & 0x80;
+                N = ((X) & 0x80) >> 7;
                 pc ++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeINY:{
                 Y += 1;
                 Z = !(Y);
-                N = (Y) & 0x80;
+                N = ((Y) & 0x80) >> 7;
                 pc ++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeCLC:{
                 C = false;
                 pc++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeSEC:{
                 C = true;
                 pc++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeCLI:{
                 I = false;
                 pc++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeSEI:{
                 I = true;
                 pc++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeCLV:{
                 V = false;
                 pc++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeCLD:{
                 D = false;
                 pc++;
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeSED:{
                 D = true;
                 pc++;
-                return EXIT_CODE_NONE;
+                
             }
             
             caseModes_AB_I(codeJMP):{
                 pc = mem_AB_I(opcode - codeJMP);
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeJSR:{
-                pcStack.push(pc+3);
+                unsigned short t = pc+3;
+                pushToStack(t & 0xFF);
+                pushToStack((t >> 8) & 0xFF);
                 pc = (byteAfterOpcode) | ((unsigned short)byte2AfterOpcode << 4);
-                return EXIT_CODE_NONE;
+                
             }
             
             case codeRTS:{
-                pc = pcStack.top();
-                pcStack.pop();
-                return EXIT_CODE_NONE;
+                pc = popFromStack();
+                pc &= (popFromStack() << 8);
+                
             }
+            
+            caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeLDA):{
+                unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeLDA);
+                A = m;
+                Z = !A;
+                N = (A & 0x80) >> 7;
+                pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeLDA);
+                
+            }
+            
+            caseModes_A_ZP_ZPY_AB_ABY(codeLDX):{
+                unsigned char m = mem_A_ZP_ZPY_AB_ABY(opcode - codeLDX);
+                X = m;
+                Z = !X;
+                N = (X & 0x80) >> 7;
+                pc += opcodeLength_A_ZP_ZPY_AB_ABY(opcode - codeLDA);
+                
+            }
+            
+            caseModes_A_ZP_ZPX_AB_ABX(codeLDY):{
+                unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeLDX);
+                Y = m;
+                Z = !Y;
+                N = (Y & 0x80) >> 7;
+                pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeLDA);
+                
+            }
+            
+            caseModes_A_ZP_ZPX_AB_ABX(codeLSR):{
+                unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeLSR);
+                C = m & 0x01;
+                m = m >> 1;
+                Z = !m;
+                N = ((m & 0x80)) >> 7;
+                setmem_A_ZP_ZPX_AB_ABX(opcode - codeLSR, m);
+                pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeLSR);
+                
+            }
+            
+            case codeNOP:{
+                //This does nothing
+                pc ++;
+                
+            }
+            
+            caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeORA):{
+                unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeORA);
+                A = m | A;
+                Z = !A;
+                N = (A & 0x80) >> 7;
+                pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeORA);
+                
+            }
+            
+            case codePHA:{
+                pushToStack(A);
+                pc ++;
+                
+            }
+            
+            case codePHP:{
+                pushToStack((N << 5) & (Z << 4) & (C << 3) & (I << 2) & (D << 1) & (V));
+                pc ++;
+                
+            }
+            
+            case codePLA:{
+                A = popFromStack();
+                Z = !A;
+                N = (A & 0x80) >> 7;
+                pc ++;
+                
+            }
+            
+            case codePLP:{
+                unsigned char flags = popFromStack();
+                N = (flags >> 5) & 0x1;
+                Z = (flags >> 4) & 0x1;
+                C = (flags >> 3) & 0x1;
+                I = (flags >> 2) & 0x1;
+                D = (flags >> 1) & 0x1;
+                V = (flags) & 0x1;
+                pc ++;
+                
+            }
+            
+            caseModes_A_ZP_ZPX_AB_ABX(codeROL):{
+                unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeROL);
+                C = (m & 0x80) >> 7;
+                m = m << 1;
+                m = m & C;
+                Z = !m;
+                N = (m & 0x80) >> 7;
+                setmem_A_ZP_ZPX_AB_ABX(opcode - codeROL, m);
+                pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeROL);
+                
+            }
+            
+            caseModes_A_ZP_ZPX_AB_ABX(codeROR):{
+                unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeROR);
+                C = m & 0x1;
+                m = m >> 1;
+                m = m & (C << 7);
+                Z = !m;
+                N = (m & 0x80) >> 7;
+                setmem_A_ZP_ZPX_AB_ABX(opcode - codeROR, m);
+                pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeROR);
+                
+            }
+            
+            case codeRTI:{
+                unsigned char flags = popFromStack();
+                N = (flags >> 5) & 0x1;
+                Z = (flags >> 4) & 0x1;
+                C = (flags >> 3) & 0x1;
+                I = (flags >> 2) & 0x1;
+                D = (flags >> 1) & 0x1;
+                V = (flags) & 0x1;
+                pc = popFromStack();
+                
+            }
+            
+            caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSBC):{
+                unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSBC);
+                unsigned short temp = A - m - C;
+                C = temp > 0xFF;
+                V = temp > 0x7F;
+                A = (unsigned char)temp;
+                Z = !A;
+                N = (A & 0x80) >> 7;
+                pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSBC);
+                
+            }
+            
+            caseModes_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSTA):{
+                unsigned char m = mem_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSTA);
+                setmem_ZP_ZPX_AB_ABX_ABY_IX_IY(m, A);
+                pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSTA);
+                
+            }
+            
+            caseModes_ZP_ZPY_AB(codeSTX):{
+                unsigned char m = mem_ZP_ZPY_AB(opcode - codeSTX);
+                setmem_ZP_ZPY_AB(m, X);
+                pc += opcodeLength_ZP_ZPY_AB(opcode - codeSTX);
+                
+            }
+            
+            caseModes_ZP_ZPX_AB(codeSTY):{
+                unsigned char m = mem_ZP_ZPX_AB(opcode - codeSTY);
+                setmem_ZP_ZPX_AB(m, Y);
+                pc += opcodeLength_ZP_ZPX_AB(opcode - codeSTY);
+                
+            }
+            
+            codeTAX:{
+                X = A;
+                Z = !X;
+                N = (X & 0x80) >> 7;
+                pc += 1;
+                
+            }
+            
+            codeTAY:{
+                Y = A;
+                Z = !Y;
+                N = (Y & 0x80) >> 7;
+                pc += 1;
+                
+            }
+            
+            codeTSX:{
+                X = stackPointer;
+                Z = !Y;
+                N = (Y & 0x80) >> 7;
+                pc += 1;
+                
+            }
+            
+            codeTXA:{
+                A = X;
+                Z = !A;
+                N = (A & 0x80) >> 7;
+                pc += 1;
+                
+            }
+            
+            codeTYA:{
+                A = Y;
+                Z = !A;
+                N = (A & 0x80) >> 7;
+                pc += 1;
+                
+            }
+            
+            codeTXS:{
+                stackPointer = X;
+                pc += 1;
+                
+            }
+            
+            default:
+                throw EXIT_ERR_UNKNOWN_OPCODE;
             
         }
         
