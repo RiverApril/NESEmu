@@ -30,11 +30,20 @@ bool loadFile(const char* path, unsigned char* memory, unsigned int memorySize){
 }
 
 int main(int argc, const char * argv[]) {
-    const char* path = "testFile";
+    const char* runPath = "testFile";
+    const char* compilePath = "";
     if(argc > 1){
-        path = argv[1];
+        if(argc > 2){
+            compilePath = argv[1];
+            runPath = argv[2];
+        }else{
+            runPath = argv[1];
+        }
     }
-    printf("Loading program: '%s'", path);
+    if(!compilePath.empty()){
+        
+    }
+    printf("Loading program: '%s'", runPath);
     loadFile(path, chip.memory, chip.memorySize);
     try{
         while(true) {
