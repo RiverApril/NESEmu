@@ -81,7 +81,11 @@
 
 #define caseModes_A_ZP_ZPX_AB_ABX(a) case a+modeAccumulator: case a+modeZeroPage: case a+modeZeroPageX: case a+modeAbsolute: case a+modeAbsoluteX
 
+#define caseModes_I_ZP_ZPX_AB_ABX(a) case a+modeImmediate2: case a+modeZeroPage: case a+modeZeroPageX: case a+modeAbsolute: case a+modeAbsoluteX
+
 #define caseModes_A_ZP_ZPY_AB_ABY(a) case a+modeAccumulator: case a+modeZeroPage: case a+modeZeroPageY: case a+modeAbsolute: case a+modeAbsoluteY2
+
+#define caseModes_I_ZP_ZPY_AB_ABY(a) case a+modeImmediate2: case a+modeZeroPage: case a+modeZeroPageY: case a+modeAbsolute: case a+modeAbsoluteY2
 
 #define caseModes_ZP_AB(a) case a+modeZeroPage: case a+modeAbsolute
 
@@ -89,9 +93,9 @@
 
 #define caseModes_ZP_ZPX_AB_ABX(a) case a+modeZeroPage: case a+modeZeroPageX: case a+modeAbsolute: case a+modeAbsoluteX
 
-#define codeModes_ZP_ZPY_AB(a) case a+modeZeroPage2: case a+modeZeroPageY2: case a+modeAbsolute2
+#define caseModes_ZP_ZPY_AB(a) case a+modeZeroPage2: case a+modeZeroPageY2: case a+modeAbsolute2
 
-#define codeModes_ZP_ZPX_AB(a) case a+modeZeroPage2: case a+modeZeroPageX2: case a+modeAbsolute2
+#define caseModes_ZP_ZPX_AB(a) case a+modeZeroPage2: case a+modeZeroPageX2: case a+modeAbsolute2
 
 #define caseModes_AB_I(a) case a+modeAbsolute: case a+modeIndirect
 
@@ -167,10 +171,14 @@
 #define EXIT_ERR_UNKNOWN_OPCODE 1
 #define EXIT_ERR_STACK_OVERFLOW 2
 #define EXIT_ERR_STACK_UNDERFLOW 3
+#define EXIT_ERR_UNKNOWN_ADDRESS_MODE 4
+
 
 class Chip{
     
 public:
+    
+    int ERR_META = 0;
     
     //Program counter
     unsigned short pc = 0x0000;
@@ -235,8 +243,7 @@ public:
                 return getMemIndirect;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
-                return 0;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
@@ -267,8 +274,8 @@ public:
                 return getMemIndirectY;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
-                return 0;
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
@@ -284,23 +291,24 @@ public:
                 return getMemAbsolute;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
-                return 0;
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
     const unsigned char mem_ZP_ZPX_AB(unsigned char mode){
         switch (mode) {
             case modeZeroPage2:
-                return getMemZeroPage2;
+                return getMemZeroPage;
                 
             case modeZeroPageX2:
-                return getMemZeroPageX2;
+                return getMemZeroPageX;
                 
             case modeAbsolute2:
-                return getMemAbsolute2;
+                return getMemAbsolute;
                 
             default:
+                ERR_META = mode;
                 throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
@@ -308,15 +316,16 @@ public:
     const unsigned char mem_ZP_ZPY_AB(unsigned char mode){
         switch (mode) {
             case modeZeroPage2:
-                return getMemZeroPage2;
+                return getMemZeroPage;
                 
             case modeZeroPageY2:
-                return getMemZeroPageY2;
+                return getMemZeroPageY;
                 
             case modeAbsolute2:
-                return getMemAbsolute2;
+                return getMemAbsolute;
                 
             default:
+                ERR_META = mode;
                 throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
@@ -339,6 +348,76 @@ public:
                 return getMemAbsoluteX;
                 
             default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    const unsigned char mem_I_ZP_ZPX_AB_ABX(unsigned char mode){
+        switch (mode) {
+            case modeImmediate2:
+                return memImmediate;
+                
+            case modeZeroPage:
+                return getMemZeroPage;
+                
+            case modeZeroPageX:
+                return getMemZeroPageX;
+                
+            case modeAbsolute:
+                return getMemAbsolute;
+                
+            case modeAbsoluteX:
+                return getMemAbsoluteX;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    const unsigned char mem_A_ZP_ZPY_AB_ABY(unsigned char mode){
+        switch (mode) {
+            case modeAccumulator:
+                return memAccumulator;
+                
+            case modeZeroPage:
+                return getMemZeroPage;
+                
+            case modeZeroPageY:
+                return getMemZeroPageY;
+                
+            case modeAbsolute:
+                return getMemAbsolute;
+                
+            case modeAbsoluteY:
+                return getMemAbsoluteY;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    const unsigned char mem_I_ZP_ZPY_AB_ABY(unsigned char mode){
+        switch (mode) {
+            case modeImmediate2:
+                return memImmediate;
+                
+            case modeZeroPage:
+                return getMemZeroPage;
+                
+            case modeZeroPageY:
+                return getMemZeroPageY;
+                
+            case modeAbsolute:
+                return getMemAbsolute;
+                
+            case modeAbsoluteY:
+                return getMemAbsoluteY;
+                
+            default:
+                ERR_META = mode;
                 throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
@@ -366,8 +445,8 @@ public:
                 break;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
-                break;
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
@@ -403,8 +482,49 @@ public:
                 break;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    void setmem_ZP_ZPX_AB(unsigned char mode, unsigned char value){
+        switch (mode) {
+                
+            case modeZeroPage2:
+                setMemZeroPage(value);
                 break;
+                
+            case modeZeroPageX2:
+                setMemZeroPageX(value);
+                break;
+                
+            case modeAbsolute2:
+                setMemAbsolute(value);
+                break;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    void setmem_ZP_ZPY_AB(unsigned char mode, unsigned char value){
+        switch (mode) {
+                
+            case modeZeroPage2:
+                setMemZeroPage(value);
+                break;
+                
+            case modeZeroPageY2:
+                setMemZeroPageY(value);
+                break;
+                
+            case modeAbsolute2:
+                setMemAbsolute(value);
+                break;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
@@ -435,8 +555,8 @@ public:
                 return 2;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
-                return 1;
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
@@ -458,8 +578,113 @@ public:
                 return 3;
                 
             default:
-                printf("Error (undefined mode): %d", (int)mode);
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    unsigned char opcodeLength_I_ZP_ZPX_AB_ABX(unsigned char mode){
+        switch (mode) {
+            case modeImmediate2:
+                return 2;
+                
+            case modeZeroPage:
+                return 2;
+                
+            case modeZeroPageX:
+                return 2;
+                
+            case modeAbsolute:
+                return 3;
+                
+            case modeAbsoluteX:
+                return 3;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    unsigned char opcodeLength_A_ZP_ZPY_AB_ABY(unsigned char mode){
+        switch (mode) {
+            case modeAccumulator:
                 return 1;
+                
+            case modeZeroPage:
+                return 2;
+                
+            case modeZeroPageY:
+                return 2;
+                
+            case modeAbsolute:
+                return 3;
+                
+            case modeAbsoluteY:
+                return 3;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    unsigned char opcodeLength_I_ZP_ZPY_AB_ABY(unsigned char mode){
+        switch (mode) {
+            case modeImmediate2:
+                return 2;
+                
+            case modeZeroPage:
+                return 2;
+                
+            case modeZeroPageY:
+                return 2;
+                
+            case modeAbsolute:
+                return 3;
+                
+            case modeAbsoluteY:
+                return 3;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    unsigned char opcodeLength_ZP_ZPX_AB(unsigned char mode){
+        switch (mode) {
+                
+            case modeZeroPage2:
+                return 2;
+                
+            case modeZeroPageX2:
+                return 2;
+                
+            case modeAbsolute2:
+                return 3;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
+        }
+    }
+    
+    unsigned char opcodeLength_ZP_ZPY_AB(unsigned char mode){
+        switch (mode) {
+                
+            case modeZeroPage2:
+                return 2;
+                
+            case modeZeroPageY2:
+                return 2;
+                
+            case modeAbsolute2:
+                return 3;
+                
+            default:
+                ERR_META = mode;
+                throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
         }
     }
     
@@ -481,7 +706,7 @@ public:
         return stack[stackPointer+1];
     }
     
-    int executeNextOpcode(){
+    void executeNextOpcode(){
         unsigned char opcode = memory[pc];
         
         printf("Executing opcode 0x%x\n", opcode);
@@ -489,15 +714,15 @@ public:
         switch(opcode){
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeADC):{
-                unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC) + C;
+                unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC);
                 unsigned short temp = m + A + C;
                 C = temp > 0xFF;
                 V = temp > 0x7F;
                 A = (unsigned char)temp;
-                Z = !A;//is 0
+                Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC);
-                
+                break;
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeAND):{
@@ -506,7 +731,7 @@ public:
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeAND);
-                
+                break;
             }
             
             caseModes_A_ZP_ZPX_AB_ABX(codeASL):{
@@ -517,7 +742,7 @@ public:
                 N = (m & 0x80) >> 7;
                 setmem_A_ZP_ZPX_AB_ABX(opcode - codeASL, m);
                 pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeASL);
-                
+                break;
             }
             
             case codeBPL:{
@@ -526,7 +751,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             case codeBMI:{
@@ -535,7 +760,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             case codeBVC:{
@@ -544,7 +769,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             case codeBVS:{
@@ -553,7 +778,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             case codeBCC:{
@@ -562,7 +787,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             case codeBCS:{
@@ -571,7 +796,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             case codeBNE:{
@@ -580,7 +805,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             case codeBEQ:{
@@ -589,7 +814,7 @@ public:
                 }else{
                     pc += 2;
                 }
-                
+                break;
             }
             
             caseModes_ZP_AB(codeBIT):{
@@ -599,11 +824,12 @@ public:
                 N = (m & 0x80) >> 7;
                 Z = true;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeBIT);
-                
+                break;
             }
             
             case codeBRK:{
-                return EXIT_CODE_BREAK;
+                ERR_META = opcode;
+                throw EXIT_BREAK;
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeCMP):{
@@ -612,7 +838,7 @@ public:
                 Z = !(A-m);//TODO figure out if this is correct
                 N = ((A-m) & 0x80) >> 7;//TODO figure out if this is correct
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCMP);
-                
+                break;
             }
             
             caseModes_I_ZP_AB(codeCPX):{
@@ -621,7 +847,7 @@ public:
                 Z = !(X-m);//TODO figure out if this is correct
                 N = ((X-m) & 0x80) >> 7;//TODO figure out if this is correct
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCPX);
-                
+                break;
             }
             
             caseModes_I_ZP_AB(codeCPY):{
@@ -630,7 +856,7 @@ public:
                 Z = !(Y-m);//TODO figure out if this is correct
                 N = ((Y-m) & 0x80) >> 7;//TODO figure out if this is correct
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCPY);
-                
+                break;
             }
             
             caseModes_ZP_ZPX_AB_ABX(codeDEC):{
@@ -639,7 +865,7 @@ public:
                 Z = !(m-1);
                 N = ((m-1) & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeDEC);
-                
+                break;
             }
             
             case codeDEX:{
@@ -647,7 +873,7 @@ public:
                 Z = !(X);
                 N = ((X) & 0x80) >> 7;
                 pc ++;
-                
+                break;
             }
             
             case codeDEY:{
@@ -655,7 +881,7 @@ public:
                 Z = !(Y);
                 N = ((Y) & 0x80) >> 7;
                 pc ++;
-                
+                break;
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeEOR):{
@@ -664,7 +890,7 @@ public:
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeEOR);
-                
+                break;
             }
             
             caseModes_ZP_ZPX_AB_ABX(codeINC):{
@@ -673,7 +899,7 @@ public:
                 Z = !(m+1);
                 N = ((m+1) & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeINC);
-                
+                break;
             }
             
             case codeINX:{
@@ -681,7 +907,7 @@ public:
                 Z = !(X);
                 N = ((X) & 0x80) >> 7;
                 pc ++;
-                
+                break;
             }
             
             case codeINY:{
@@ -689,54 +915,54 @@ public:
                 Z = !(Y);
                 N = ((Y) & 0x80) >> 7;
                 pc ++;
-                
+                break;
             }
             
             case codeCLC:{
                 C = false;
                 pc++;
-                
+                break;
             }
             
             case codeSEC:{
                 C = true;
                 pc++;
-                
+                break;
             }
             
             case codeCLI:{
                 I = false;
                 pc++;
-                
+                break;
             }
             
             case codeSEI:{
                 I = true;
                 pc++;
-                
+                break;
             }
             
             case codeCLV:{
                 V = false;
                 pc++;
-                
+                break;
             }
             
             case codeCLD:{
                 D = false;
                 pc++;
-                
+                break;
             }
             
             case codeSED:{
                 D = true;
                 pc++;
-                
+                break;
             }
             
             caseModes_AB_I(codeJMP):{
                 pc = mem_AB_I(opcode - codeJMP);
-                
+                break;
             }
             
             case codeJSR:{
@@ -744,13 +970,13 @@ public:
                 pushToStack(t & 0xFF);
                 pushToStack((t >> 8) & 0xFF);
                 pc = (byteAfterOpcode) | ((unsigned short)byte2AfterOpcode << 4);
-                
+                break;
             }
             
             case codeRTS:{
                 pc = popFromStack();
                 pc &= (popFromStack() << 8);
-                
+                break;
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeLDA):{
@@ -759,25 +985,25 @@ public:
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeLDA);
-                
+                break;
             }
             
-            caseModes_A_ZP_ZPY_AB_ABY(codeLDX):{
-                unsigned char m = mem_A_ZP_ZPY_AB_ABY(opcode - codeLDX);
+            caseModes_I_ZP_ZPY_AB_ABY(codeLDX):{
+                unsigned char m = mem_I_ZP_ZPY_AB_ABY(opcode - codeLDX);
                 X = m;
                 Z = !X;
                 N = (X & 0x80) >> 7;
-                pc += opcodeLength_A_ZP_ZPY_AB_ABY(opcode - codeLDA);
-                
+                pc += opcodeLength_I_ZP_ZPY_AB_ABY(opcode - codeLDX);
+                break;
             }
             
-            caseModes_A_ZP_ZPX_AB_ABX(codeLDY):{
-                unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeLDX);
+            caseModes_I_ZP_ZPX_AB_ABX(codeLDY):{
+                unsigned char m = mem_I_ZP_ZPX_AB_ABX(opcode - codeLDY);
                 Y = m;
                 Z = !Y;
                 N = (Y & 0x80) >> 7;
-                pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeLDA);
-                
+                pc += opcodeLength_I_ZP_ZPX_AB_ABX(opcode - codeLDY);
+                break;
             }
             
             caseModes_A_ZP_ZPX_AB_ABX(codeLSR):{
@@ -788,13 +1014,13 @@ public:
                 N = ((m & 0x80)) >> 7;
                 setmem_A_ZP_ZPX_AB_ABX(opcode - codeLSR, m);
                 pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeLSR);
-                
+                break;
             }
             
             case codeNOP:{
                 //This does nothing
                 pc ++;
-                
+                break;
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeORA):{
@@ -803,19 +1029,19 @@ public:
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeORA);
-                
+                break;
             }
             
             case codePHA:{
                 pushToStack(A);
                 pc ++;
-                
+                break;
             }
             
             case codePHP:{
                 pushToStack((N << 5) & (Z << 4) & (C << 3) & (I << 2) & (D << 1) & (V));
                 pc ++;
-                
+                break;
             }
             
             case codePLA:{
@@ -823,7 +1049,7 @@ public:
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc ++;
-                
+                break;
             }
             
             case codePLP:{
@@ -835,7 +1061,7 @@ public:
                 D = (flags >> 1) & 0x1;
                 V = (flags) & 0x1;
                 pc ++;
-                
+                break;
             }
             
             caseModes_A_ZP_ZPX_AB_ABX(codeROL):{
@@ -847,7 +1073,7 @@ public:
                 N = (m & 0x80) >> 7;
                 setmem_A_ZP_ZPX_AB_ABX(opcode - codeROL, m);
                 pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeROL);
-                
+                break;
             }
             
             caseModes_A_ZP_ZPX_AB_ABX(codeROR):{
@@ -859,7 +1085,7 @@ public:
                 N = (m & 0x80) >> 7;
                 setmem_A_ZP_ZPX_AB_ABX(opcode - codeROR, m);
                 pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeROR);
-                
+                break;
             }
             
             case codeRTI:{
@@ -871,7 +1097,7 @@ public:
                 D = (flags >> 1) & 0x1;
                 V = (flags) & 0x1;
                 pc = popFromStack();
-                
+                break;
             }
             
             caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSBC):{
@@ -883,84 +1109,81 @@ public:
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSBC);
-                
+                break;
             }
             
             caseModes_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSTA):{
-                unsigned char m = mem_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSTA);
+                unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSTA);
                 setmem_ZP_ZPX_AB_ABX_ABY_IX_IY(m, A);
                 pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSTA);
-                
+                break;
             }
             
             caseModes_ZP_ZPY_AB(codeSTX):{
                 unsigned char m = mem_ZP_ZPY_AB(opcode - codeSTX);
                 setmem_ZP_ZPY_AB(m, X);
                 pc += opcodeLength_ZP_ZPY_AB(opcode - codeSTX);
-                
+                break;
             }
             
             caseModes_ZP_ZPX_AB(codeSTY):{
                 unsigned char m = mem_ZP_ZPX_AB(opcode - codeSTY);
                 setmem_ZP_ZPX_AB(m, Y);
                 pc += opcodeLength_ZP_ZPX_AB(opcode - codeSTY);
-                
+                break;
             }
             
-            codeTAX:{
+            case codeTAX:{
                 X = A;
                 Z = !X;
                 N = (X & 0x80) >> 7;
                 pc += 1;
-                
+                break;
             }
             
-            codeTAY:{
+            case codeTAY:{
                 Y = A;
                 Z = !Y;
                 N = (Y & 0x80) >> 7;
                 pc += 1;
-                
+                break;
             }
             
-            codeTSX:{
+            case codeTSX:{
                 X = stackPointer;
                 Z = !Y;
                 N = (Y & 0x80) >> 7;
                 pc += 1;
-                
+                break;
             }
             
-            codeTXA:{
+            case codeTXA:{
                 A = X;
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += 1;
-                
+                break;
             }
             
-            codeTYA:{
+            case codeTYA:{
                 A = Y;
                 Z = !A;
                 N = (A & 0x80) >> 7;
                 pc += 1;
-                
+                break;
             }
             
-            codeTXS:{
+            case codeTXS:{
                 stackPointer = X;
                 pc += 1;
-                
+                break;
             }
             
             default:
+                ERR_META = opcode;
                 throw EXIT_ERR_UNKNOWN_OPCODE;
             
         }
-        
-        printf("Execution Failed\n");
-        
-        return EXIT_CODE_ERROR;
     }
     
 };

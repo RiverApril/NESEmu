@@ -36,14 +36,35 @@ int main(int argc, const char * argv[]) {
     }
     printf("Loading program: '%s'", path);
     loadFile(path, chip.memory, chip.memorySize);
-    int exitCode = EXIT_CODE_NONE;
-    while(exitCode == EXIT_CODE_NONE){
-        printf("\npc: 0x%x    ", chip.pc);
-        printf("A: 0x%x, X: 0x%x, Y: 0x%x    ", chip.A, chip.X, chip.Y);
-        printf("C%c V%c Z%c N%c D%c I%c\n", chip.C?'*':'_', chip.V?'*':'_', chip.Z?'*':'_', chip.N?'*':'_', chip.D?'*':'_', chip.I?'*':'_');
-        printMemory(chip.memory, 0, 0x20);
-        exitCode = chip.executeNextOpcode();
+    try{
+        while(true) {
+            printf("\npc: 0x%x    ", chip.pc);
+            printf("A: 0x%x, X: 0x%x, Y: 0x%x    ", chip.A, chip.X, chip.Y);
+            printf("C%c V%c Z%c N%c D%c I%c\n", chip.C?'*':'_', chip.V?'*':'_', chip.Z?'*':'_', chip.N?'*':'_', chip.D?'*':'_', chip.I?'*':'_');
+            printMemory(chip.memory, 0, 0x20);
+            chip.executeNextOpcode();
+        }
+    }catch(int EXIT_CODE){
+        switch (EXIT_CODE) {
+            case EXIT_BREAK:
+                printf("EXIT - Break on opcode: 0x%x\n", chip.ERR_META);
+                break;
+            case EXIT_ERR_UNKNOWN_OPCODE:
+                printf("ERR - Unknown Opcode: 0x%x\n", chip.ERR_META);
+                break;
+            case EXIT_ERR_STACK_OVERFLOW:
+                printf("ERR - Stack Overflow\n");
+                break;
+            case EXIT_ERR_STACK_UNDERFLOW:
+                printf("ERR - Stack Underflow\n");
+                break;
+            case EXIT_ERR_UNKNOWN_ADDRESS_MODE:
+                printf("ERR - Unknown Address Mode: 0x%x\n", chip.ERR_META);
+                break;
+            default:
+                printf("ERR: %d\n", EXIT_CODE);
+                break;
+        }
     }
-    printf("\nExit Code: %d\n", exitCode);
     return 0;
 }
