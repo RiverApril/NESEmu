@@ -1,7 +1,7 @@
 
 #include <iostream>
 #include <fstream>
-#include "Chip.h"
+#include "Chip.hpp"
 
 using namespace std;
 

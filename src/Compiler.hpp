@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-#include "Chip.h"
+#include "Chip.hpp"
 
 /* Syntax
 
