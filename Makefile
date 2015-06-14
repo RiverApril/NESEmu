@@ -29,7 +29,7 @@ SRCSLASH := src/
 OBJSLASH := obj/
 OBJS := $(subst $(SRCSLASH),$(OBJSLASH),$(TMP))
 CPP_FLAGS := -g -std=c++11
-LIB_FLAGS := -lncurses
+LIB_FLAGS := 
 
 
 all: $(NAME)

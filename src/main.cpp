@@ -20,31 +20,38 @@ void printMemory(unsigned char* memory, unsigned int memoryMin, unsigned int mem
 bool loadFile(const char* path, unsigned char* memory, unsigned int memorySize){
     ifstream file;
     file.open(path, ios::binary | ios::in);
-    char buffer[memorySize];
-    file.read(buffer, memorySize);
-    file.close();
-    for(unsigned int i=0;i<memorySize;i++){
-        memory[i] = (unsigned char)buffer[i];
+    if(file){
+        char buffer[memorySize];
+        file.read(buffer, memorySize);
+        file.close();
+        for(unsigned int i=0;i<memorySize;i++){
+            memory[i] = (unsigned char)buffer[i];
+        }
+        return true;
+    }else{
+        return false;
     }
-    return true;
 }
 
 int main(int argc, const char * argv[]) {
-    const char* runPath = "testFile";
+    const char* runPath = "";
     const char* compilePath = "";
     if(argc > 1){
-        if(argc > 2){
-            compilePath = argv[1];
-            runPath = argv[2];
-        }else{
-            runPath = argv[1];
-        }
+        runPath = argv[1];
     }
-    if(!compilePath.empty()){
+    if(compilePath[0] != '\0'){
         
     }
-    printf("Loading program: '%s'", runPath);
-    loadFile(path, chip.memory, chip.memorySize);
+    if(runPath[0] != '\0'){
+        
+    }
+    printf("Loading program: '%s'\n", runPath);
+    bool success = loadFile(runPath, chip.memory, chip.memorySize);
+    if(success){
+        printf("Program loaded, running.\n");
+    }else{
+        printf("Failed to load program.\n");
+    }
     try{
         while(true) {
             printf("\npc: 0x%x    ", chip.pc);
