@@ -4,11 +4,13 @@
 
 #include "SDL2/SDL.h"
 
+#define EXIT_SDL_QUIT 100
+
 struct DisplaySDL {
 
 	int width, height;
 
-	unsigned char keys[16];
+	unsigned char keys[8];
 
 	bool errored = false;
 	bool quit = false;

@@ -6,7 +6,6 @@
 #include <time.h>
 
 
-
 DisplaySDL::DisplaySDL(const char* title, int width, int height) {
 
 	this->width = width;
@@ -114,6 +113,9 @@ void DisplaySDL::update(){
 				state = true;
 			case SDL_KEYUP:
 				switch (event.key.keysym.sym){
+					case SDLK_0:
+						keys[0x0] = state;
+						break;
 					case SDLK_1:
 						keys[0x1] = state;
 						break;
@@ -124,43 +126,19 @@ void DisplaySDL::update(){
 						keys[0x3] = state;
 						break;
 					case SDLK_4:
-						keys[0xC] = state;
-						break;
-					case SDLK_q:
 						keys[0x4] = state;
 						break;
-					case SDLK_w:
+					case SDLK_5:
 						keys[0x5] = state;
 						break;
-					case SDLK_e:
+					case SDLK_6:
 						keys[0x6] = state;
 						break;
-					case SDLK_r:
-						keys[0xD] = state;
-						break;
-					case SDLK_a:
+					case SDLK_7:
 						keys[0x7] = state;
 						break;
-					case SDLK_s:
-						keys[0x8] = state;
-						break;
-					case SDLK_d:
-						keys[0x9] = state;
-						break;
-					case SDLK_f:
-						keys[0xE] = state;
-						break;
-					case SDLK_z:
-						keys[0xA] = state;
-						break;
-					case SDLK_x:
-						keys[0x0] = state;
-						break;
-					case SDLK_c:
-						keys[0xB] = state;
-						break;
-					case SDLK_v:
-						keys[0xF] = state;
+					case SDLK_ESCAPE:
+						throw EXIT_SDL_QUIT;
 						break;
 				}
 				break;
