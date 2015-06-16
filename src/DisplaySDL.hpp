@@ -3,6 +3,7 @@
 #define __NESEmu__DisplaySDL__
 
 #include "SDL2/SDL.h"
+#include <string>
 
 #define EXIT_SDL_QUIT 100
 
@@ -32,7 +33,7 @@ struct DisplaySDL {
 	int scale = 10;
 
 	DisplaySDL(const char* title, int width, int height);
-	~DisplaySDL();
+	virtual ~DisplaySDL();
 
 	virtual void drawGridAt(const unsigned char* grid, int width, int height, unsigned char multiplier, int drawX, int drawY, int drawWidth, int drawHeight, int smoothOn = 0xFF, int smoothOff = 0xFF);
 	virtual void draw();

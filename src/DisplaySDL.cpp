@@ -21,7 +21,7 @@ DisplaySDL::DisplaySDL(const char* title, int width, int height) {
 		return;
 	}
 
-	window = SDL_CreateWindow("Chip-8 Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow("NES Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	if (window == NULL){
 		printf("SDL Window Failed: %s\n", SDL_GetError());
 		errored = true;
@@ -79,6 +79,8 @@ void DisplaySDL::draw(){
 		displayFPS = frames;
 		frames = 0;
 	}
+	
+	SDL_SetWindowTitle(window, ("NES Emu - FPS: "+std::to_string(displayFPS)).c_str()); 
 
 }
 

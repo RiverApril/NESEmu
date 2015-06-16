@@ -69,20 +69,21 @@ int main(int argc, const char * argv[]) {
             if(chipRunning){
                 
                 display->drawGridAt(chip.memory, 0x100, 0x100, 0x01, 0, 0, 0x100, 0x100);
-                display->draw();
                 
-                printf("\npc: %X   ", chip.pc);
-                printf("A: %X, X: %X, Y: %X    ", chip.A, chip.X, chip.Y);
-                printf("P:%X  N%c V%c ?* ?_ D%c I%c Z%c C%c\n", chip.S(), chip.N?'1':'0', chip.V?'1':'0', chip.D?'1':'0', chip.I?'1':'0', chip.Z?'1':'0', chip.C?'1':'0');
-                printMemory(chip.memory, 0x0, 0xFF);
-                printf("Stack: [");
+                printf("\npc:%04X  ", chip.pc);
+                printf("A:%02X X:%02X Y:%02X  ", chip.A, chip.X, chip.Y);
+                printf("P:%02X N%c V%c ?1 ?0 D%c I%c Z%c C%c\n", chip.S(), chip.N?'1':'0', chip.V?'1':'0', chip.D?'1':'0', chip.I?'1':'0', chip.Z?'1':'0', chip.C?'1':'0');
+                //printMemory(chip.memory, 0x0, 0xFF);
+                /*printf("Stack: [");
                 for(int i=0;i<chip.stackPointer;i++){
                     printf("%x%s", chip.stack[i], (i==(chip.stackPointer-1))?"":", ");
                 }
-                printf("]\n");
+                printf("]\n");*/
             
                 chip.executeNextOpcode();
             }
+            
+            display->draw();
             
         }catch(int EXIT_CODE){
             switch (EXIT_CODE) {

@@ -259,6 +259,8 @@ const unsigned short Chip::mem_AB_I(unsigned char mode){
             return getMemIndirect;
 
         default:
+            printf("func: mem_AB_I\n");
+            ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
 }
@@ -290,6 +292,7 @@ const unsigned char Chip::mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode){
             return getMemIndirectY;
 
         default:
+            printf("func: mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -307,6 +310,7 @@ const unsigned char Chip::mem_I_ZP_AB(unsigned char mode){
             return getMemAbsolute;
 
         default:
+            printf("func: mem_I_ZP_AB\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -324,6 +328,7 @@ const unsigned char Chip::mem_ZP_ZPX_AB(unsigned char mode){
             return getMemAbsolute;
 
         default:
+            printf("func: mem_ZP_ZPX_AB\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -341,6 +346,7 @@ const unsigned char Chip::mem_ZP_ZPY_AB(unsigned char mode){
             return getMemAbsolute;
 
         default:
+            printf("func: mem_ZP_ZPY_AB\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -364,6 +370,7 @@ const unsigned char Chip::mem_A_ZP_ZPX_AB_ABX(unsigned char mode){
             return getMemAbsoluteX;
 
         default:
+            printf("func: mem_A_ZP_ZPX_AB_ABX\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -387,6 +394,7 @@ const unsigned char Chip::mem_I_ZP_ZPX_AB_ABX(unsigned char mode){
             return getMemAbsoluteX;
 
         default:
+            printf("func: mem_I_ZP_ZPX_AB_ABX\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -410,6 +418,7 @@ const unsigned char Chip::mem_A_ZP_ZPY_AB_ABY(unsigned char mode){
             return getMemAbsoluteY;
 
         default:
+            printf("func: mem_A_ZP_ZPY_AB_ABY\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -433,6 +442,7 @@ const unsigned char Chip::mem_I_ZP_ZPY_AB_ABY(unsigned char mode){
             return getMemAbsoluteY;
 
         default:
+            printf("func: mem_I_ZP_ZPY_AB_ABY\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -461,6 +471,7 @@ void Chip::setmem_A_ZP_ZPX_AB_ABX(unsigned char mode, unsigned char value){
             break;
 
         default:
+            printf("func: setmem_A_ZP_ZPX_AB_ABX\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -498,6 +509,7 @@ void Chip::setmem_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode, unsigned char valu
             break;
 
         default:
+            printf("func: setmem_ZP_ZPX_AB_ABX_ABY_IX_IY\n");
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
 }
@@ -518,6 +530,7 @@ void Chip::setmem_ZP_ZPX_AB(unsigned char mode, unsigned char value){
             break;
 
         default:
+            printf("func: setmem_ZP_ZPX_AB\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -539,6 +552,7 @@ void Chip::setmem_ZP_ZPY_AB(unsigned char mode, unsigned char value){
             break;
 
         default:
+            printf("func: setmem_ZP_ZPY_AB\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -571,6 +585,7 @@ unsigned char Chip::opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode){
             return 2;
 
         default:
+            printf("func: opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -594,6 +609,7 @@ unsigned char Chip::opcodeLength_A_ZP_ZPX_AB_ABX(unsigned char mode){
             return 3;
 
         default:
+            printf("func: opcodeLength_A_ZP_ZPX_AB_ABX\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -617,6 +633,7 @@ unsigned char Chip::opcodeLength_I_ZP_ZPX_AB_ABX(unsigned char mode){
             return 3;
 
         default:
+            printf("func: opcodeLength_I_ZP_ZPX_AB_ABX\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -640,6 +657,7 @@ unsigned char Chip::opcodeLength_A_ZP_ZPY_AB_ABY(unsigned char mode){
             return 3;
 
         default:
+            printf("func: opcodeLength_A_ZP_ZPY_AB_ABY\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -663,6 +681,7 @@ unsigned char Chip::opcodeLength_I_ZP_ZPY_AB_ABY(unsigned char mode){
             return 3;
 
         default:
+            printf("func: opcodeLength_I_ZP_ZPY_AB_ABY\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -681,6 +700,7 @@ unsigned char Chip::opcodeLength_ZP_ZPX_AB(unsigned char mode){
             return 3;
 
         default:
+            printf("func: opcodeLength_ZP_ZPX_AB\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -699,6 +719,7 @@ unsigned char Chip::opcodeLength_ZP_ZPY_AB(unsigned char mode){
             return 3;
 
         default:
+            printf("func: opcodeLength_ZP_ZPY_AB\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -727,7 +748,7 @@ void Chip::executeNextOpcode(){
     byteAfterOpcode = getMemory(pc+1);
     byte2AfterOpcode = getMemory(pc+2);
 
-    printf("Executing opcode %s (0x%X) [%x %x]\n", opcodeName(opcode), opcode, byteAfterOpcode, byte2AfterOpcode);
+    printf("Executing opcode %s (0x%02X) [%02X %02X]\n", opcodeName(opcode), opcode, byteAfterOpcode, byte2AfterOpcode);
 
     switch(opcode){
 
@@ -735,7 +756,7 @@ void Chip::executeNextOpcode(){
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC);
             unsigned short temp = m + A + C;
             C = temp > 0xFF;
-            V = (m & 0x80) >> 7;
+            V = ~(A ^ m) & (A ^ temp) & 0x80;
             A = (unsigned char)temp;
             Z = !A;
             N = (A & 0x80) >> 7;
@@ -1114,7 +1135,7 @@ void Chip::executeNextOpcode(){
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSBC);
             unsigned short temp = A - m - C;
             C = temp > 0xFF;
-            V = temp > 0x7F;
+            V = ~(A ^ m) & (A ^ temp) & 0x80;
             A = (unsigned char)temp;
             Z = !A;
             N = (A & 0x80) >> 7;

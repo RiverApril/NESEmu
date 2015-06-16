@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stack>
+#include <stdlib.h>
 
 
 #define modeAccumulator 0x08
