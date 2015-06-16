@@ -168,6 +168,9 @@
 #define EXIT_ERR_UNKNOWN_ADDRESS_MODE 4
 
 
+
+
+
 class Chip{
 
 public:
@@ -201,6 +204,10 @@ public:
 
     //Interrupt Flag
     bool I = false;
+    
+    inline unsigned char S(){
+        return ((N << 7) | (V << 6) | (1 << 5) | (0 << 4) | (D << 3) | (I << 2) | (Z << 1) | (C));
+    }
 
 
     const static unsigned int memorySize = 0x10000;

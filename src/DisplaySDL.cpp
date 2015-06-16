@@ -12,18 +12,18 @@ DisplaySDL::DisplaySDL(const char* title, int width, int height) {
 	this->height = height;
 
 	for (int i = 0; i < 16; i++){
-		keys[i] = 0;
+		keys[i] = false;
 	}
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0){
-		std::cout << "SDL Init Failed: " << SDL_GetError() << std::endl;
+		printf("SDL Init Failed: %s\n", SDL_GetError());
 		errored = true;
 		return;
 	}
 
 	window = SDL_CreateWindow("Chip-8 Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	if (window == NULL){
-		std::cout << "SDL Window failed: " << SDL_GetError() << std::endl;
+		printf("SDL Window Failed: %s\n", SDL_GetError());
 		errored = true;
 		return;
 	}
@@ -82,23 +82,6 @@ void DisplaySDL::draw(){
 
 }
 
-/*
-
-Hex:
-|1|2|3|C|
-|4|5|6|D|
-|7|8|9|E|
-|A|0|B|F|
-
-Keyboard:
-|1|2|3|4|
-|q|w|e|r|
-|a|s|d|f|
-|z|x|c|v|
-
-
-*/
-
 void DisplaySDL::update(){
 	SDL_PumpEvents();
 
@@ -138,7 +121,7 @@ void DisplaySDL::update(){
 						keys[0x7] = state;
 						break;
 					case SDLK_ESCAPE:
-						throw EXIT_SDL_QUIT;
+						quit = true;
 						break;
 				}
 				break;

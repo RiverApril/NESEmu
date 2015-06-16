@@ -10,7 +10,7 @@ struct DisplaySDL {
 
 	int width, height;
 
-	unsigned char keys[8];
+	bool keys[8];
 
 	bool errored = false;
 	bool quit = false;

@@ -1048,7 +1048,7 @@ void Chip::executeNextOpcode(){
         }
 
         case codePHP:{
-            pushToStack((N << 7) | (V << 6) | (1 << 5) | (0 << 4) | (D << 3) | (I << 2) | (Z << 1) | (C));
+            pushToStack(S());
             pc ++;
             break;
         }
