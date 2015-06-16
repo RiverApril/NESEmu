@@ -748,7 +748,7 @@ void Chip::executeNextOpcode(){
     byteAfterOpcode = getMemory(pc+1);
     byte2AfterOpcode = getMemory(pc+2);
 
-    printf("Executing opcode %s (0x%02X) [%02X %02X]\n", opcodeName(opcode), opcode, byteAfterOpcode, byte2AfterOpcode);
+    printf("Executing opcode %s (%02X) [%02X %02X]\n", opcodeName(opcode), opcode, byteAfterOpcode, byte2AfterOpcode);
 
     switch(opcode){
 
@@ -1133,9 +1133,9 @@ void Chip::executeNextOpcode(){
 
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSBC):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSBC);
-            unsigned short temp = A - m - C;
-            C = temp > 0xFF;
-            V = ~(A ^ m) & (A ^ temp) & 0x80;
+            unsigned short temp = A - m - (!C);
+            C = temp <= 0xFF;
+            V = (A ^ m) & (A ^ temp) & 0x80;
             A = (unsigned char)temp;
             Z = !A;
             N = (A & 0x80) >> 7;
@@ -1151,15 +1151,13 @@ void Chip::executeNextOpcode(){
         }
 
         caseModes_ZP_ZPY_AB(codeSTX):{
-            unsigned char m = mem_ZP_ZPY_AB(opcode - codeSTX);
-            setmem_ZP_ZPY_AB(m, X);
+            setmem_ZP_ZPY_AB(opcode - codeSTX, X);
             pc += opcodeLength_ZP_ZPY_AB(opcode - codeSTX);
             break;
         }
 
         caseModes_ZP_ZPX_AB(codeSTY):{
-            unsigned char m = mem_ZP_ZPX_AB(opcode - codeSTY);
-            setmem_ZP_ZPX_AB(m, Y);
+            setmem_ZP_ZPX_AB(opcode - codeSTY, Y);
             pc += opcodeLength_ZP_ZPX_AB(opcode - codeSTY);
             break;
         }

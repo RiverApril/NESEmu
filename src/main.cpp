@@ -62,17 +62,21 @@ int main(int argc, const char * argv[]) {
     
     bool chipRunning = true;
     
+    int tick = 0;
+    
     while(!(display->quit || display->errored)) {
         try{
             display->update();
             
             if(chipRunning){
                 
+                tick++;
+                
                 display->drawGridAt(chip.memory, 0x100, 0x100, 0x01, 0, 0, 0x100, 0x100);
                 
                 printf("\npc:%04X  ", chip.pc);
                 printf("A:%02X X:%02X Y:%02X  ", chip.A, chip.X, chip.Y);
-                printf("P:%02X N%c V%c ?1 ?0 D%c I%c Z%c C%c\n", chip.S(), chip.N?'1':'0', chip.V?'1':'0', chip.D?'1':'0', chip.I?'1':'0', chip.Z?'1':'0', chip.C?'1':'0');
+                printf("P:%02X{N%d,V%d,?1,?0,D%d,I%d,Z%d,C%d}  tk:%ddec \n", chip.S(), chip.N, chip.V, chip.D, chip.I, chip.Z, chip.C, tick);
                 //printMemory(chip.memory, 0x0, 0xFF);
                 /*printf("Stack: [");
                 for(int i=0;i<chip.stackPointer;i++){
