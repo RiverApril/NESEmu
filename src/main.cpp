@@ -74,9 +74,7 @@ int main(int argc, const char * argv[]) {
                 
                 display->drawGridAt(chip.memory, 0x100, 0x100, 0x01, 0, 0, 0x100, 0x100);
                 
-                printf("\npc:%04X  ", chip.pc);
-                printf("A:%02X X:%02X Y:%02X  ", chip.A, chip.X, chip.Y);
-                printf("P:%02X{N%d,V%d,?1,?0,D%d,I%d,Z%d,C%d}  tk:%ddec \n", chip.S(), chip.N, chip.V, chip.D, chip.I, chip.Z, chip.C, tick);
+                printf("\n%04d pc:%04X  A:%02X X:%02X Y:%02X  P:%02X{N%d,V%d,1,0,D%d,I%d,Z%d,C%d} %s (%02X) [%02X %02X]", tick, chip.pc, chip.A, chip.X, chip.Y, chip.S(), chip.N, chip.V, chip.D, chip.I, chip.Z, chip.C, chip.opcodeName(chip.opcode), chip.opcode, chip.byteAfterOpcode, chip.byte2AfterOpcode);
                 //printMemory(chip.memory, 0x0, 0xFF);
                 /*printf("Stack: [");
                 for(int i=0;i<chip.stackPointer;i++){
@@ -92,27 +90,27 @@ int main(int argc, const char * argv[]) {
         }catch(int EXIT_CODE){
             switch (EXIT_CODE) {
                 case EXIT_BREAK:
-                    printf("EXIT - Break on opcode: 0x%X\n", chip.ERR_META);
+                    printf("\nEXIT - Break on Opcode: 0x%X\n", chip.ERR_META);
                     chipRunning = false;
                     break;
                 case EXIT_ERR_UNKNOWN_OPCODE:
-                    printf("ERR - Unknown Opcode: 0x%X\n", chip.ERR_META);
+                    printf("\nERR - Unknown Opcode: 0x%X\n", chip.ERR_META);
                     chipRunning = false;
                     break;
                 case EXIT_ERR_STACK_OVERFLOW:
-                    printf("ERR - Stack Overflow\n");
+                    printf("\nERR - Stack Overflow\n");
                     chipRunning = false;
                     break;
                 case EXIT_ERR_STACK_UNDERFLOW:
-                    printf("ERR - Stack Underflow\n");
+                    printf("\nERR - Stack Underflow\n");
                     chipRunning = false;
                     break;
                 case EXIT_ERR_UNKNOWN_ADDRESS_MODE:
-                    printf("ERR - Unknown Address Mode: 0x%X\n", chip.ERR_META);
+                    printf("\nERR - Unknown Address Mode: 0x%X\n", chip.ERR_META);
                     chipRunning = false;
                     break;
                 default:
-                    printf("ERR: %d\n", EXIT_CODE);
+                    printf("\nERR: %d\n", EXIT_CODE);
                     chipRunning = false;
                     break;
             }

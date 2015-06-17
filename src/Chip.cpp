@@ -747,9 +747,7 @@ void Chip::executeNextOpcode(){
     opcode = memory[pc];
     byteAfterOpcode = getMemory(pc+1);
     byte2AfterOpcode = getMemory(pc+2);
-
-    printf("Executing opcode %s (%02X) [%02X %02X]\n", opcodeName(opcode), opcode, byteAfterOpcode, byte2AfterOpcode);
-
+    
     switch(opcode){
 
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeADC):{
