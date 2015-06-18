@@ -5,13 +5,21 @@
 #include "SDL2/SDL.h"
 #include <string>
 
+#define keyA 0
+#define keyB 1
+#define keySelect 2
+#define keyStart 3
+#define keyUp 4
+#define keyDown 5
+#define keyLeft 6
+#define keyRight 7
+
 #define EXIT_SDL_QUIT 100
 
 struct DisplaySDL {
 
 	int width, height;
-
-	bool keys[8];
+	std::string title;
 
 	bool errored = false;
 	bool quit = false;
@@ -37,7 +45,7 @@ struct DisplaySDL {
 
 	virtual void drawGridAt(const unsigned char* grid, int width, int height, unsigned char multiplier, int drawX, int drawY, int drawWidth, int drawHeight, int smoothOn = 0xFF, int smoothOff = 0xFF);
 	virtual void draw();
-	virtual void update();
+	virtual void update(bool p1Keys[8], bool p2Keys[8]);
 
 };
 

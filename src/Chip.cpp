@@ -233,20 +233,65 @@ const char* Chip::opcodeName(unsigned char code){
 }
 
 unsigned char Chip::getMemory(unsigned short address){
-    if(address < 0x2000){
-        return memory[address % 0x800];
-    }else if(address >= 0x2000 && address < 0x4000){
-        return memory[(address % 8) + 0x800];
-    }else{
-        return memory[address];
+    switch(address){
+        
+        case 0x4016:{
+            if(controllerP1Index < 0x8){
+                memory[address] = (controllerP1Buffer[controllerP1Index] ? 0x1 : 0x0) | 0xA0;
+                controllerP1Index++;
+            }else{
+                return 0xA1;
+            }
+            return memory[address];
+        }
+            
+        case 0x4017:{
+            if(controllerP2Index < 0x8){
+                memory[address] = (controllerP2Buffer[controllerP2Index] ? 0x1 : 0x0) | 0xA0;
+                controllerP2Index++;
+            }else{
+                return 0xA1;
+            }
+            return memory[address];
+        }
+        
+        default:{
+            if(address < 0x2000){
+                return memory[address % 0x800];
+            }else if(address >= 0x2000 && address < 0x4000){
+                return memory[(address % 8) + 0x800];
+            }else{
+                return memory[address];
+            }
+        }
     }
 }
 
 void Chip::setMemory(unsigned short address, unsigned char value){
-    if(address < 0x2000){
-        memory[address % 0x800] = value;
-    }else if(address >= 0x2000 && address < 0x4000){
-        memory[address % 8] = value;
+    switch(address){
+        
+        case 0x4016:{
+            if(value & 0x1){
+                controllerP1Index = 0;
+            }
+            return;
+        }
+            
+        case 0x4017:{
+            if(value & 0x1){
+                controllerP2Index = 0;
+            }
+            return;
+        }
+        
+        default:{
+            if(address < 0x2000){
+                memory[address % 0x800] = value;
+            }else if(address >= 0x2000 && address < 0x4000){
+                memory[address % 8] = value;
+            }
+            return;
+        }
     }
 }
 

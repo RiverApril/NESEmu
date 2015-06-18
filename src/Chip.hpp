@@ -169,12 +169,15 @@
 #define EXIT_ERR_UNKNOWN_ADDRESS_MODE 4
 
 
-
-
-
 class Chip{
 
 public:
+    
+    bool controllerP1Buffer[8];
+    bool controllerP2Buffer[8];
+    
+    unsigned char controllerP1Index = 0;
+    unsigned char controllerP2Index = 0;
 
     int ERR_META = 0;
 

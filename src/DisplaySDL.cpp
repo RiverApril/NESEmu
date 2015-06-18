@@ -10,10 +10,8 @@ DisplaySDL::DisplaySDL(const char* title, int width, int height) {
 
 	this->width = width;
 	this->height = height;
-
-	for (int i = 0; i < 16; i++){
-		keys[i] = false;
-	}
+	
+	this->title = title;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0){
 		printf("SDL Init Failed: %s\n", SDL_GetError());
@@ -21,7 +19,7 @@ DisplaySDL::DisplaySDL(const char* title, int width, int height) {
 		return;
 	}
 
-	window = SDL_CreateWindow("NES Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
+	window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	if (window == NULL){
 		printf("SDL Window Failed: %s\n", SDL_GetError());
 		errored = true;
@@ -69,6 +67,11 @@ void DisplaySDL::draw(){
 
 	frames++;
 
+}
+
+void DisplaySDL::update(bool p1Keys[8], bool p2Keys[8]){
+
+	
 	int currentTicks = clock() - startTicks;
 
 	if (currentTicks < TICKS_PER_FRAME){
@@ -79,12 +82,11 @@ void DisplaySDL::draw(){
 		displayFPS = frames;
 		frames = 0;
 	}
+
+	SDL_SetWindowTitle(window, (title+" - FPS: "+std::to_string(displayFPS)).c_str());
 	
-	SDL_SetWindowTitle(window, ("NES Emu - FPS: "+std::to_string(displayFPS)).c_str()); 
-
-}
-
-void DisplaySDL::update(){
+	
+	 
 	SDL_PumpEvents();
 
 	while (SDL_PollEvent(&event)){
@@ -98,30 +100,32 @@ void DisplaySDL::update(){
 				state = true;
 			case SDL_KEYUP:
 				switch (event.key.keysym.sym){
-					case SDLK_0:
-						keys[0x0] = state;
+					
+					case SDLK_z:
+						p1Keys[keyA] = state;
 						break;
-					case SDLK_1:
-						keys[0x1] = state;
+					case SDLK_x:
+						p1Keys[keyB] = state;
 						break;
-					case SDLK_2:
-						keys[0x2] = state;
+					case SDLK_RSHIFT:
+						p1Keys[keySelect] = state;
 						break;
-					case SDLK_3:
-						keys[0x3] = state;
+					case SDLK_RETURN:
+						p1Keys[keyStart] = state;
 						break;
-					case SDLK_4:
-						keys[0x4] = state;
+					case SDLK_UP:
+						p1Keys[keyUp] = state;
 						break;
-					case SDLK_5:
-						keys[0x5] = state;
+					case SDLK_DOWN:
+						p1Keys[keyDown] = state;
 						break;
-					case SDLK_6:
-						keys[0x6] = state;
+					case SDLK_LEFT:
+						p1Keys[keyLeft] = state;
 						break;
-					case SDLK_7:
-						keys[0x7] = state;
+					case SDLK_RIGHT:
+						p1Keys[keyRight] = state;
 						break;
+						
 					case SDLK_ESCAPE:
 						quit = true;
 						break;
