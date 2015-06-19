@@ -60,6 +60,40 @@ void DisplaySDL::drawGridAt(const unsigned char* grid, int width, int height, un
 	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
 }
 
+void DisplaySDL::drawGridAt(unsigned char (*getPoint)(int), int width, int height, unsigned char multiplier, int drawX, int drawY, int drawWidth, int drawHeight, int smoothOn, int smoothOff){
+	unsigned char* rgbaGfx = new unsigned char[width*height * 4];
+	for (int i = 0; i < width*height; i++){
+		int j = i * 4;
+		rgbaGfx[j] = getPoint(i) * multiplier;
+		rgbaGfx[j + 1] = getPoint(i) * multiplier;
+		rgbaGfx[j + 2] = getPoint(i) * multiplier;
+		rgbaGfx[j + 3] = getPoint(i) > 0 ? smoothOn : smoothOff;
+	}
+
+	SDL_Surface* gfxSurface = SDL_CreateRGBSurfaceFrom(rgbaGfx, width, height, screenSurface->format->BitsPerPixel, width * 4, screenSurface->format->Rmask, screenSurface->format->Gmask, screenSurface->format->Bmask, 0xFF000000);
+	SDL_Rect streached;
+	streached.x = drawX;
+	streached.y = drawY;
+	streached.w = drawWidth;
+	streached.h = drawHeight;
+	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
+}
+
+void DisplaySDL::drawPixelAt(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a, unsigned int xScale, unsigned int yScale){
+	unsigned char* rgbaGfx = new unsigned char[4];
+	rgbaGfx[0] = b;
+	rgbaGfx[1] = g;
+	rgbaGfx[2] = r;
+	rgbaGfx[3] = a;
+	SDL_Surface* gfxSurface = SDL_CreateRGBSurfaceFrom(rgbaGfx, 1, 1, screenSurface->format->BitsPerPixel, 4, screenSurface->format->Rmask, screenSurface->format->Gmask, screenSurface->format->Bmask, 0xFF000000);
+	SDL_Rect streached;
+	streached.x = x;
+	streached.y = y;
+	streached.w = xScale;
+	streached.h = yScale;
+	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
+}
+
 
 void DisplaySDL::draw(){
 

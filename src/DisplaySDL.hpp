@@ -44,6 +44,8 @@ struct DisplaySDL {
 	virtual ~DisplaySDL();
 
 	virtual void drawGridAt(const unsigned char* grid, int width, int height, unsigned char multiplier, int drawX, int drawY, int drawWidth, int drawHeight, int smoothOn = 0xFF, int smoothOff = 0xFF);
+	virtual void drawGridAt(unsigned char (*getPoint)(int), int width, int height, unsigned char multiplier, int drawX, int drawY, int drawWidth, int drawHeight, int smoothOn = 0xFF, int smoothOff = 0xFF);
+	virtual void drawPixelAt(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a, unsigned int xScale = 1, unsigned int yScale = 1);
 	virtual void draw();
 	virtual void update(bool p1Keys[8], bool p2Keys[8]);
 

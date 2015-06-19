@@ -1,6 +1,63 @@
 
 #include "Chip.hpp"
 
+void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
+    
+    for(unsigned char i=0;i<8;i++){
+        controllerP1Buffer[i] = false;
+        controllerP2Buffer[i] = false;
+    }
+    controllerP1Index = 0;
+    controllerP2Index = 0;
+    
+    ERR_META = 0;
+    
+    pc = 0xC000;
+    
+    A = 0;
+    X = 0;
+    Y = 0;
+    
+    C = false;
+    V = false;
+    Z = false;
+    N = false;
+    D = false;
+    I = true;
+    
+    if(resetRAM){
+        for(unsigned int i=0;i<0x800;i++){
+            memoryRAM[i] = 0;
+        }
+    }
+    
+    if(resetPPUandAPUandIO){
+        for(unsigned int i=0;i<0x8;i++){
+            memoryPPURegisters[i] = 0;
+        }
+        for(unsigned int i=0;i<0x20;i++){
+            memoryAPUandIORegisters[i] = 0;
+        }
+    }
+    
+    if(resetPRGRAM){
+        for(unsigned int i=0;i<0xBFE0;i++){
+            memoryProgramMemory[i] = 0;
+        }
+    }
+    
+    stackPointer = 0xFD;
+    
+    for(unsigned short i=0;i<0x100;i++){
+        stack[i] = 0;
+    }
+    
+    opcode = 0;
+    byteAfterOpcode = 0;
+    byte2AfterOpcode = 0;
+    
+}
+
 const char* Chip::opcodeName(unsigned char code){
     switch(code){
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeADC):{
@@ -232,79 +289,247 @@ const char* Chip::opcodeName(unsigned char code){
     }
 }
 
-unsigned char Chip::getMemory(unsigned short address){
-    switch(address){
-        
-        case 0x4016:{
-            if(controllerP1Index < 0x8){
-                memory[address] = (controllerP1Buffer[controllerP1Index] ? 0x1 : 0x0) | 0xA0;
-                controllerP1Index++;
-            }else{
-                return 0xA1;
-            }
-            return memory[address];
+unsigned char Chip::opcodeLength(unsigned char code){
+    switch(code){
+        caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeADC):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeADC);
         }
-            
-        case 0x4017:{
-            if(controllerP2Index < 0x8){
-                memory[address] = (controllerP2Buffer[controllerP2Index] ? 0x1 : 0x0) | 0xA0;
-                controllerP2Index++;
-            }else{
-                return 0xA1;
-            }
-            return memory[address];
-        }
-        
-        default:{
-            if(address < 0x2000){
-                return memory[address % 0x800];
-            }else if(address >= 0x2000 && address < 0x4000){
-                return memory[(address % 8) + 0x800];
-            }else{
-                return memory[address];
-            }
-        }
-    }
-}
 
-void Chip::setMemory(unsigned short address, unsigned char value){
-    switch(address){
-        
-        case 0x4016:{
-            if(value & 0x1){
-                controllerP1Index = 0;
-            }
-            return;
+        caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeAND):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeAND);
         }
-            
-        case 0x4017:{
-            if(value & 0x1){
-                controllerP2Index = 0;
-            }
-            return;
-        }
-        
-        default:{
-            if(address < 0x2000){
-                memory[address % 0x800] = value;
-            }else if(address >= 0x2000 && address < 0x4000){
-                memory[address % 8] = value;
-            }
-            return;
-        }
-    }
-}
 
-const unsigned short Chip::mem_AB_I(unsigned char mode){
-    switch (mode) {
-        case modeAbsolute:
-            return getMemAbsolute;
+        caseModes_A_ZP_ZPX_AB_ABX(codeASL):{
+            return opcodeLength_A_ZP_ZPX_AB_ABX(code-codeASL);
+        }
 
-        case modeIndirect:
-            return getMemIndirect;
+        case codeBPL:{
+            return 2;
+        }
+
+        case codeBMI:{
+            return 2;
+        }
+
+        case codeBVC:{
+            return 2;
+        }
+
+        case codeBVS:{
+            return 2;
+        }
+
+        case codeBCC:{
+            return 2;
+        }
+
+        case codeBCS:{
+            return 2;
+        }
+
+        case codeBNE:{
+            return 2;
+        }
+
+        case codeBEQ:{
+            return 2;
+        }
+
+        caseModes_ZP_AB(codeBIT):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeBIT);
+        }
+
+        case codeBRK:{
+            return 1;
+        }
+
+        caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeCMP):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeCMP);
+        }
+
+        caseModes_I_ZP_AB(codeCPX):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeCPX);
+        }
+
+        caseModes_I_ZP_AB(codeCPY):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeCPY);
+        }
+
+        caseModes_ZP_ZPX_AB_ABX(codeDEC):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeDEC);
+        }
+
+        case codeDEX:{
+            return 1;
+        }
+
+        case codeDEY:{
+            return 1;
+        }
+
+        caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeEOR):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeEOR);
+        }
+
+        caseModes_ZP_ZPX_AB_ABX(codeINC):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeINC);
+        }
+
+        case codeINX:{
+            return 1;
+        }
+
+        case codeINY:{
+            return 1;
+        }
+
+        case codeCLC:{
+            return 1;
+        }
+
+        case codeSEC:{
+            return 1;
+        }
+
+        case codeCLI:{
+            return 1;
+        }
+
+        case codeSEI:{
+            return 1;
+        }
+
+        case codeCLV:{
+            return 1;
+        }
+
+        case codeCLD:{
+            return 1;
+        }
+
+        case codeSED:{
+            return 1;
+        }
+
+        caseModes_AB_I(codeJMP):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeJMP);
+        }
+
+        case codeJSR:{
+            return 3;
+        }
+
+        case codeRTS:{
+            return 1;
+        }
+
+        caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeLDA):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeLDA);
+        }
+
+        caseModes_I_ZP_ZPY_AB_ABY(codeLDX):{
+            return opcodeLength_I_ZP_ZPY_AB_ABY(code-codeLDX);
+        }
+
+        caseModes_I_ZP_ZPX_AB_ABX(codeLDY):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX(code-codeLDY);
+        }
+
+        caseModes_A_ZP_ZPX_AB_ABX(codeLSR):{
+            return opcodeLength_A_ZP_ZPX_AB_ABX(code-codeLSR);
+        }
+
+        case codeNOP:{
+            return 1;
+        }
+
+        caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeORA):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeORA);
+        }
+
+        case codePHA:{
+            return 1;
+        }
+
+        case codePHP:{
+            return 1;
+        }
+
+        case codePLA:{
+            return 1;
+        }
+
+        case codePLP:{
+            return 1;
+        }
+
+        caseModes_A_ZP_ZPX_AB_ABX(codeROL):{
+            return opcodeLength_A_ZP_ZPX_AB_ABX(code-codeROL);
+        }
+
+        caseModes_A_ZP_ZPX_AB_ABX(codeROR):{
+            return opcodeLength_A_ZP_ZPX_AB_ABX(code-codeROR);
+        }
+
+        case codeRTI:{
+            return 1;
+        }
+
+        caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSBC):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeSBC);
+        }
+
+        caseModes_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSTA):{
+            return opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(code-codeSTA);
+        }
+
+        caseModes_ZP_ZPY_AB(codeSTX):{
+            return opcodeLength_ZP_ZPY_AB(code-codeSTX);
+        }
+
+        caseModes_ZP_ZPX_AB(codeSTY):{
+            return opcodeLength_ZP_ZPX_AB(code-codeSTY);
+        }
+
+        case codeTAX:{
+            return 1;
+        }
+
+        case codeTAY:{
+            return 1;
+        }
+
+        case codeTSX:{
+            return 1;
+        }
+
+        case codeTXA:{
+            return 1;
+        }
+
+        case codeTYA:{
+            return 1;
+        }
+
+        case codeTXS:{
+            return 1;
+        }
 
         default:
-            printf("func: mem_AB_I\n");
+            return 3;
+    }
+}
+
+const unsigned short Chip::address_AB_I(unsigned char mode){
+    switch (mode) {
+        case modeAbsolute:
+            return addressAbsolute;
+
+        case modeIndirect:
+            return addressIndirect;
+
+        default:
+            printf("func: address_AB_I\n");
             ERR_META = mode;
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
@@ -770,28 +995,100 @@ unsigned char Chip::opcodeLength_ZP_ZPY_AB(unsigned char mode){
     }
 }
 
+unsigned char Chip::getMemory(unsigned short address, bool passive){
+    switch(address){
+        
+        case 0x4016:{
+            if(controllerP1Index < 0x8){
+                unsigned char v = (controllerP1Buffer[controllerP1Index] ? 0x1 : 0x0) | 0xA0;
+                if(!passive)controllerP1Index++;
+                return v;
+            }else{
+                return 0xA1;
+            }
+        }
+            
+        case 0x4017:{
+            if(controllerP2Index < 0x8){
+                unsigned char v = (controllerP2Buffer[controllerP2Index] ? 0x1 : 0x0) | 0xA0;
+                if(!passive)controllerP2Index++;
+                return v;
+            }else{
+                return 0xA1;
+            }
+        }
+        
+        default:{
+            if(address < 0x2000){
+                return memoryRAM[address % 0x800];
+            }else if(address >= 0x2000 && address < 0x4000){
+                return memoryPPURegisters[address % 0x8];
+            }else if(address >= 0x4000 && address < 0x4020){
+                return memoryAPUandIORegisters[address - 0x4000];
+            }else if(address >= 0x4020){
+                return memoryProgramMemory[address - 0x4020];
+            }else{
+                ERR_META = address;
+                throw EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE;
+            }
+        }
+        
+    }
+}
+
+void Chip::setMemory(unsigned short address, unsigned char value){
+    switch(address){
+        
+        case 0x4016:{
+            if(value & 0x1){
+                controllerP1Index = 0;
+            }
+            return;
+        }
+        
+        default:{
+            if(address < 0x2000){
+                memoryRAM[address % 0x800] = value;
+            }else if(address >= 0x2000 && address < 0x4000){
+                memoryPPURegisters[address % 0x8] = value;
+            }else if(address >= 0x4000 && address < 0x4020){
+                memoryAPUandIORegisters[address - 0x4000] = value;
+            }else if(address >= 0x4020){
+                memoryProgramMemory[address - 0x4020] = value;
+            }else{
+                ERR_META = address;
+                throw EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE;
+            }
+            return;
+        }
+    }
+}
+
 void Chip::pushToStack(unsigned char value){
     stack[stackPointer] = value;
-    if(stackPointer < 0xFF){
-        stackPointer++;
+    if(stackPointer > 0x00){
+        stackPointer--;
     }else{
         throw EXIT_ERR_STACK_OVERFLOW;
     }
 }
 
 unsigned char Chip::popFromStack(){
-    if(stackPointer > 0){
-        stackPointer--;
+    if(stackPointer < 0xFF){
+        stackPointer++;
     }else{
         throw EXIT_ERR_STACK_UNDERFLOW;
     }
     return stack[stackPointer];
 }
 
-void Chip::executeNextOpcode(){
-    opcode = memory[pc];
+void Chip::prepareOpcode(){
+    opcode = getMemory(pc);
     byteAfterOpcode = getMemory(pc+1);
     byte2AfterOpcode = getMemory(pc+2);
+}
+
+void Chip::executeOpcode(){
     
     switch(opcode){
 
@@ -1034,7 +1331,7 @@ void Chip::executeNextOpcode(){
         }
 
         caseModes_AB_I(codeJMP):{
-            pc = mem_AB_I(opcode - codeJMP);
+            pc = address_AB_I(opcode - codeJMP);
             break;
         }
 

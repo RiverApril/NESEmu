@@ -44,15 +44,15 @@
 #define setMemZeroPageY(a) setMemory(addressZeroPageY, a)
 
 #define addressAbsolute (byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 8))
-#define getMemAbsolute addressAbsolute
+#define getMemAbsolute getMemory(addressAbsolute)
 #define setMemAbsolute(a) setMemory(addressAbsolute, a)
 
 #define addressAbsoluteX (((byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 8))+X) & 0xFFFF)
-#define getMemAbsoluteX addressAbsoluteX
+#define getMemAbsoluteX getMemory(addressAbsoluteX)
 #define setMemAbsoluteX(a) setMemory(addressAbsoluteX, a)
 
 #define addressAbsoluteY getMemory(((byteAfterOpcode | ((unsigned short)byte2AfterOpcode << 4))+Y) & 0xFFFF)
-#define getMemAbsoluteY addressAbsoluteY
+#define getMemAbsoluteY getMemory(addressAbsoluteY)
 #define setMemAbsoluteY(a) setMemory(addressAbsoluteY, a)
 
 #define memIndirectXHelp getMemory(((byteAfterOpcode+X) & 0xFF))
@@ -167,6 +167,7 @@
 #define EXIT_ERR_STACK_OVERFLOW 2
 #define EXIT_ERR_STACK_UNDERFLOW 3
 #define EXIT_ERR_UNKNOWN_ADDRESS_MODE 4
+#define EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE 5
 
 
 class Chip{
@@ -214,24 +215,74 @@ public:
     }
 
 
-    const static unsigned int memorySize = 0x10000;
+    //const static unsigned int memorySize = 0xC808;
+    
+//private:
+    //unsigned char memory[memorySize] = {0};
+    unsigned char memoryRAM[0x800] = {0};
+    unsigned char memoryPPURegisters[0x8] = {0};
+    unsigned char memoryAPUandIORegisters[0x20] = {0};
+    unsigned char memoryProgramMemory[0xBFE0] = {0};
+    
+    //Note: all numbers that follow in these comments are hexidecimal.
+    
+    ////// Memory Mapping details:
+    //// Work RAM
+    // Address         :    0 - 1FFF
+    // Translation     : address % 800
+    // Emulator Memory : memoryRAM[800]
+    
+    //// PPU Registers
+    // Address         : 2000 - 3FFF
+    // Translation     : address % 8
+    // Emulator Memory : memoryPPURegisters[8]
+    
+    //// APU and IO Registers
+    // Address         : 4000 - 401F
+    // Translation     : address - 4000
+    // Emulator Memory : memoryAPUandIORegisters[20]
+    
+    //// Program ROM, SRAM, RAM
+    // Address         : 4020 - FFFF
+    // Translation     : address - 4020
+    // Emulator Memory : memoryProgramMemory[BFE0]
+    
+    
+    //// Real Addresses:
+    //    0 -  7FF : Work RAM
+    //  800 -  FFF : Mirror of Work RAM
+    // 1000 - 17FF : Mirror of Work RAM
+    // 1800 - 1FFF : Mirror of Work RAM
+    
+    // 2000 - 2007 : PPU Registers
+    // 2008 - 3FFF : Every 8 are mirrors of PPU Registers
+    
+    // 4000 - 401F : APU and IO Registers 
+    
+    // 4020 - 5FFF : Program ROM
+    // 6000 - 7FFF : SRAM
+    // 8000 - BFFF : Program RAM
+    // C000 - FFFF : Program RAM
 
-    unsigned char memory[memorySize] = {0};
-
-    unsigned char stackPointer = 0;
+public:
+    unsigned char stackPointer = 0xFD;
     unsigned char stack[0x100] = {0};
 
     unsigned char opcode;
     unsigned char byteAfterOpcode;
     unsigned char byte2AfterOpcode;
+    
+    void reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM);
 
     const char* opcodeName(unsigned char code);
+    
+    unsigned char opcodeLength(unsigned char code);
 
-    unsigned char getMemory(unsigned short address);
+    unsigned char getMemory(unsigned short address, bool passive = false);
 
     void setMemory(unsigned short address, unsigned char value);
 
-    const unsigned short mem_AB_I(unsigned char mode);
+    const unsigned short address_AB_I(unsigned char mode);
 
     const unsigned char mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode);
 
@@ -274,9 +325,10 @@ public:
     void pushToStack(unsigned char value);
 
     unsigned char popFromStack();
-
-    void executeNextOpcode();
-
+    
+    void prepareOpcode();
+    void executeOpcode();
+    
 };
 
 
