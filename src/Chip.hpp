@@ -170,6 +170,23 @@
 #define EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE 5
 
 
+struct BitField {
+    bool bit0 : 1;
+    bool bit1 : 1;
+    bool bit2 : 1;
+    bool bit3 : 1;
+    bool bit4 : 1;
+    bool bit5 : 1;
+    bool bit6 : 1;
+    bool bit7 : 1;
+};
+
+union BitByteUnion {
+    unsigned char byte;
+    struct BitField bits;
+};
+
+
 class Chip{
 
 public:
@@ -191,34 +208,71 @@ public:
     //X and Y Registers
     unsigned char X = 0x00;
     unsigned char Y = 0x00;
-
-    //Carry Flag
-    bool C = false;
-
-    //Overflow Flag
-    bool V = false;
-
-    //Zero Flag
-    bool Z = false;
-
-    //Negative Flag
-    bool N = false;
-
-    //Decimal Flag
-    bool D = false;
-
-    //Interrupt Flag
-    bool I = false;
     
-    inline unsigned char S(){
-        return ((N << 7) | (V << 6) | (1 << 5) | (0 << 4) | (D << 3) | (I << 2) | (Z << 1) | (C));
-    }
-
-
-    //const static unsigned int memorySize = 0xC808;
     
-//private:
-    //unsigned char memory[memorySize] = {0};
+    BitByteUnion CPU_Flags;
+    
+#define CPU_C CPU_Flags.bits.bit0
+#define CPU_Z CPU_Flags.bits.bit1
+#define CPU_I CPU_Flags.bits.bit2
+#define CPU_D CPU_Flags.bits.bit3
+#define CPU_V CPU_Flags.bits.bit6
+#define CPU_N CPU_Flags.bits.bit7
+
+#define CPU_S CPU_Flags.byte
+
+
+    BitByteUnion PPU_CTRL_Flags;
+    
+#define PPU_CTRL_N0 PPU_CTRL_Flags.bits.bit0
+#define PPU_CTRL_N1 PPU_CTRL_Flags.bits.bit1
+#define PPU_CTRL_I PPU_CTRL_Flags.bits.bit2
+#define PPU_CTRL_S PPU_CTRL_Flags.bits.bit3
+#define PPU_CTRL_B PPU_CTRL_Flags.bits.bit4
+#define PPU_CTRL_H PPU_CTRL_Flags.bits.bit5
+#define PPU_CTRL_P PPU_CTRL_Flags.bits.bit6
+#define PPU_CTRL_V PPU_CTRL_Flags.bits.bit7
+
+#define PPU_CTRL PPU_CTRL_Flags.byte
+
+
+    BitByteUnion PPU_MASK_Flags;
+    
+#define PPU_MASK_G PPU_MASK_Flags.bits.bit0
+#define PPU_MASK_m PPU_MASK_Flags.bits.bit1
+#define PPU_MASK_M PPU_MASK_Flags.bits.bit2
+#define PPU_MASK_b PPU_MASK_Flags.bits.bit3
+#define PPU_MASK_s PPU_MASK_Flags.bits.bit4
+#define PPU_MASK_R PPU_MASK_Flags.bits.bit5
+#define PPU_MASK_G PPU_MASK_Flags.bits.bit6
+#define PPU_MASK_B PPU_MASK_Flags.bits.bit7
+
+#define PPU_MASK PPU_MASK_Flags.byte
+
+
+    BitByteUnion PPU_STATUS_Flags;
+    
+#define PPU_STATUS_O PPU_STATUS_Flags.bits.bit5
+#define PPU_STATUS_S PPU_STATUS_Flags.bits.bit6
+#define PPU_STATUS_V PPU_STATUS_Flags.bits.bit7
+
+#define PPU_STATUS PPU_STATUS_Flags.byte
+
+    unsigned char OAM_ADDR;
+    unsigned char OAM_DATA;
+    
+    unsigned char PPU_SCROLL_INDEX;
+    unsigned char PPU_SCROLL_X;
+    unsigned char PPU_SCROLL_Y;
+    
+    unsigned char PPU_ADDR_INDEX;
+    unsigned char PPU_ADDR_MSB;
+    unsigned char PPU_ADDR_LSB;
+    
+    unsigned char PPU_DATA;
+    unsigned char OAM_DMA;
+
+
     unsigned char memoryRAM[0x800] = {0};
     unsigned char memoryPPURegisters[0x8] = {0};
     unsigned char memoryAPUandIORegisters[0x20] = {0};
@@ -278,10 +332,6 @@ public:
     
     unsigned char opcodeLength(unsigned char code);
 
-    unsigned char getMemory(unsigned short address, bool passive = false);
-
-    void setMemory(unsigned short address, unsigned char value);
-
     const unsigned short address_AB_I(unsigned char mode);
 
     const unsigned char mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode);
@@ -321,6 +371,10 @@ public:
     unsigned char opcodeLength_ZP_ZPX_AB(unsigned char mode);
 
     unsigned char opcodeLength_ZP_ZPY_AB(unsigned char mode);
+
+    unsigned char getMemory(unsigned short address, bool passive = false);
+
+    void setMemory(unsigned short address, unsigned char value);
 
     void pushToStack(unsigned char value);
 

@@ -18,12 +18,15 @@ void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
     X = 0;
     Y = 0;
     
-    C = false;
-    V = false;
-    Z = false;
-    N = false;
-    D = false;
-    I = true;
+    CPU_C = false;
+    CPU_V = false;
+    CPU_Z = false;
+    CPU_N = false;
+    CPU_D = false;
+    CPU_I = true;
+    
+    CPU_Flags.bits.bit4 = false;
+    CPU_Flags.bits.bit5 = true;
     
     if(resetRAM){
         for(unsigned int i=0;i<0x800;i++){
@@ -998,6 +1001,66 @@ unsigned char Chip::opcodeLength_ZP_ZPY_AB(unsigned char mode){
 unsigned char Chip::getMemory(unsigned short address, bool passive){
     switch(address){
         
+        case 0x2000:{
+            if(passive)return PPU_CTRL;
+            return 0;
+        }
+            
+        case 0x2001:{
+            if(passive)return PPU_MASK;
+            return 0;
+        }
+            
+        case 0x2002:{
+            if(!passive){
+                PPU_SCROLL_INDEX = 0;
+                PPU_ADDR_INDEX = 0;
+            }
+            return PPU_STATUS;
+        }
+            
+        case 0x2003:{
+            if(passive)return OAM_ADDR;
+            return 0;
+        }
+            
+        case 0x2004:{
+            return OAM_DATA;
+        }
+            
+        case 0x2005:{
+            if(passive){
+                switch(PPU_SCROLL_INDEX){
+                    case 0:
+                        return PPU_SCROLL_X;
+                    case 1:
+                        return PPU_SCROLL_Y;
+                }
+            }
+            return 0;
+        }
+            
+        case 0x2006:{
+            if(passive){
+                switch(PPU_ADDR_INDEX){
+                    case 0:
+                        return PPU_ADDR_MSB;
+                    case 1:
+                        return PPU_ADDR_LSB;
+                }
+            }
+            return 0;
+        }
+            
+        case 0x2007:{
+            return PPU_DATA;
+        }
+            
+        case 0x4014:{
+            if(passive)return OAM_DMA;
+            return 0;
+        }
+        
         case 0x4016:{
             if(controllerP1Index < 0x8){
                 unsigned char v = (controllerP1Buffer[controllerP1Index] ? 0x1 : 0x0) | 0xA0;
@@ -1038,6 +1101,66 @@ unsigned char Chip::getMemory(unsigned short address, bool passive){
 
 void Chip::setMemory(unsigned short address, unsigned char value){
     switch(address){
+        
+        case 0x2000:{
+            PPU_CTRL = value;
+            return;
+        }
+            
+        case 0x2001:{
+            PPU_MASK = value;
+            return;
+        }
+            
+        case 0x2002:{
+            return;
+        }
+            
+        case 0x2003:{
+            OAM_ADDR = value;
+            return;
+        }
+            
+        case 0x2004:{
+            OAM_DATA = value;
+            return;
+        }
+            
+        case 0x2005:{
+            switch(PPU_SCROLL_INDEX){
+                case 0:
+                    PPU_SCROLL_X = value;
+                    PPU_SCROLL_INDEX++;
+                    return;
+                case 1:
+                    PPU_SCROLL_Y = value;
+                    PPU_SCROLL_INDEX++;
+                    return;
+            }
+            return;
+        }
+            
+        case 0x2006:{
+            switch(PPU_ADDR_INDEX){
+                case 0:
+                    PPU_ADDR_MSB = value;
+                    PPU_ADDR_INDEX++;
+                    return;
+                case 1:
+                    PPU_ADDR_LSB = value;
+                    PPU_ADDR_INDEX++;
+                    return;
+            }
+            return;
+        }
+            
+        case 0x2007:{
+            PPU_DATA = value;
+        }
+            
+        case 0x4014:{
+            OAM_DMA = value;
+        }
         
         case 0x4016:{
             if(value & 0x1){
@@ -1094,12 +1217,12 @@ void Chip::executeOpcode(){
 
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeADC):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC);
-            unsigned short temp = m + A + C;
-            C = temp > 0xFF;
-            V = ~(A ^ m) & (A ^ temp) & 0x80;
+            unsigned short temp = m + A + CPU_C;
+            CPU_C = temp > 0xFF;
+            CPU_V = ~(A ^ m) & (A ^ temp) & 0x80;
             A = (unsigned char)temp;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeADC);
             break;
         }
@@ -1107,18 +1230,18 @@ void Chip::executeOpcode(){
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeAND):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeAND);
             A = m & A;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeAND);
             break;
         }
 
         caseModes_A_ZP_ZPX_AB_ABX(codeASL):{
             unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeASL);
-            C = m & 0x80;
+            CPU_C = m & 0x80;
             m = m << 1;
-            Z = !m;
-            N = (m & 0x80) >> 7;
+            CPU_Z = !m;
+            CPU_N = (m & 0x80) >> 7;
             setmem_A_ZP_ZPX_AB_ABX(opcode - codeASL, m);
             pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeASL);
             break;
@@ -1126,7 +1249,7 @@ void Chip::executeOpcode(){
 
         case codeBPL:{
             pc += 2;
-            if(!N){
+            if(!CPU_N){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1134,7 +1257,7 @@ void Chip::executeOpcode(){
 
         case codeBMI:{
             pc += 2;
-            if(N){
+            if(CPU_N){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1142,7 +1265,7 @@ void Chip::executeOpcode(){
 
         case codeBVC:{
             pc += 2;
-            if(!V){
+            if(!CPU_V){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1150,7 +1273,7 @@ void Chip::executeOpcode(){
 
         case codeBVS:{
             pc += 2;
-            if(V){
+            if(CPU_V){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1158,7 +1281,7 @@ void Chip::executeOpcode(){
 
         case codeBCC:{
             pc += 2;
-            if(!C){
+            if(!CPU_C){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1166,7 +1289,7 @@ void Chip::executeOpcode(){
 
         case codeBCS:{
             pc += 2;
-            if(C){
+            if(CPU_C){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1174,7 +1297,7 @@ void Chip::executeOpcode(){
 
         case codeBNE:{
             pc += 2;
-            if(!Z){
+            if(!CPU_Z){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1182,7 +1305,7 @@ void Chip::executeOpcode(){
 
         case codeBEQ:{
             pc += 2;
-            if(Z){
+            if(CPU_Z){
                 pc += (char)byteAfterOpcode;
             }
             break;
@@ -1190,9 +1313,9 @@ void Chip::executeOpcode(){
 
         caseModes_ZP_AB(codeBIT):{
             unsigned short m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeBIT);
-            V = (m & 0x40) >> 6;
-            N = (m & 0x80) >> 7;
-            Z = !(m & A);
+            CPU_V = (m & 0x40) >> 6;
+            CPU_N = (m & 0x80) >> 7;
+            CPU_Z = !(m & A);
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeBIT);
             break;
         }
@@ -1204,27 +1327,27 @@ void Chip::executeOpcode(){
 
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeCMP):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCMP);
-            C = A >= m;
-            Z = !(A-m);
-            N = ((A-m) & 0x80) >> 7;
+            CPU_C = A >= m;
+            CPU_Z = !(A-m);
+            CPU_N = ((A-m) & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCMP);
             break;
         }
 
         caseModes_I_ZP_AB(codeCPX):{
             unsigned char m = mem_I_ZP_AB(opcode - codeCPX);
-            C = X >= m;
-            Z = !(X-m);
-            N = ((X-m) & 0x80) >> 7;
+            CPU_C = X >= m;
+            CPU_Z = !(X-m);
+            CPU_N = ((X-m) & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCPX);
             break;
         }
 
         caseModes_I_ZP_AB(codeCPY):{
             unsigned char m = mem_I_ZP_AB(opcode - codeCPY);
-            C = Y >= m;
-            Z = !(Y-m);
-            N = ((Y-m) & 0x80) >> 7;
+            CPU_C = Y >= m;
+            CPU_Z = !(Y-m);
+            CPU_N = ((Y-m) & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeCPY);
             break;
         }
@@ -1232,24 +1355,24 @@ void Chip::executeOpcode(){
         caseModes_ZP_ZPX_AB_ABX(codeDEC):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeDEC);
             setmem_A_ZP_ZPX_AB_ABX(opcode - codeDEC, m-1);
-            Z = !(m-1);
-            N = ((m-1) & 0x80) >> 7;
+            CPU_Z = !(m-1);
+            CPU_N = ((m-1) & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeDEC);
             break;
         }
 
         case codeDEX:{
             X -= 1;
-            Z = !(X);
-            N = ((X) & 0x80) >> 7;
+            CPU_Z = !(X);
+            CPU_N = ((X) & 0x80) >> 7;
             pc ++;
             break;
         }
 
         case codeDEY:{
             Y -= 1;
-            Z = !(Y);
-            N = ((Y) & 0x80) >> 7;
+            CPU_Z = !(Y);
+            CPU_N = ((Y) & 0x80) >> 7;
             pc ++;
             break;
         }
@@ -1257,8 +1380,8 @@ void Chip::executeOpcode(){
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeEOR):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeEOR);
             A = m ^ A;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeEOR);
             break;
         }
@@ -1266,66 +1389,66 @@ void Chip::executeOpcode(){
         caseModes_ZP_ZPX_AB_ABX(codeINC):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeINC);
             setmem_A_ZP_ZPX_AB_ABX(opcode - codeINC, m+1);
-            Z = !(m+1);
-            N = ((m+1) & 0x80) >> 7;
+            CPU_Z = !(m+1);
+            CPU_N = ((m+1) & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeINC);
             break;
         }
 
         case codeINX:{
             X += 1;
-            Z = !(X);
-            N = ((X) & 0x80) >> 7;
+            CPU_Z = !(X);
+            CPU_N = ((X) & 0x80) >> 7;
             pc ++;
             break;
         }
 
         case codeINY:{
             Y += 1;
-            Z = !(Y);
-            N = ((Y) & 0x80) >> 7;
+            CPU_Z = !(Y);
+            CPU_N = ((Y) & 0x80) >> 7;
             pc ++;
             break;
         }
 
         case codeCLC:{
-            C = false;
+            CPU_C = false;
             pc++;
             break;
         }
 
         case codeSEC:{
-            C = true;
+            CPU_C = true;
             pc++;
             break;
         }
 
         case codeCLI:{
-            I = false;
+            CPU_I = false;
             pc++;
             break;
         }
 
         case codeSEI:{
-            I = true;
+            CPU_I = true;
             pc++;
             break;
         }
 
         case codeCLV:{
-            V = false;
+            CPU_V = false;
             pc++;
             break;
         }
 
         case codeCLD:{
-            D = false;
+            CPU_D = false;
             pc++;
             break;
         }
 
         case codeSED:{
-            D = true;
+            CPU_D = true;
             pc++;
             break;
         }
@@ -1352,8 +1475,8 @@ void Chip::executeOpcode(){
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeLDA):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeLDA);
             A = m;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeLDA);
             break;
         }
@@ -1361,8 +1484,8 @@ void Chip::executeOpcode(){
         caseModes_I_ZP_ZPY_AB_ABY(codeLDX):{
             unsigned char m = mem_I_ZP_ZPY_AB_ABY(opcode - codeLDX);
             X = m;
-            Z = !X;
-            N = (X & 0x80) >> 7;
+            CPU_Z = !X;
+            CPU_N = (X & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPY_AB_ABY(opcode - codeLDX);
             break;
         }
@@ -1370,18 +1493,18 @@ void Chip::executeOpcode(){
         caseModes_I_ZP_ZPX_AB_ABX(codeLDY):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX(opcode - codeLDY);
             Y = m;
-            Z = !Y;
-            N = (Y & 0x80) >> 7;
+            CPU_Z = !Y;
+            CPU_N = (Y & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX(opcode - codeLDY);
             break;
         }
 
         caseModes_A_ZP_ZPX_AB_ABX(codeLSR):{
             unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeLSR);
-            C = m & 0x01;
+            CPU_C = m & 0x01;
             m = m >> 1;
-            Z = !m;
-            N = ((m & 0x80)) >> 7;
+            CPU_Z = !m;
+            CPU_N = ((m & 0x80)) >> 7;
             setmem_A_ZP_ZPX_AB_ABX(opcode - codeLSR, m);
             pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeLSR);
             break;
@@ -1396,8 +1519,8 @@ void Chip::executeOpcode(){
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeORA):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeORA);
             A = m | A;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeORA);
             break;
         }
@@ -1409,39 +1532,39 @@ void Chip::executeOpcode(){
         }
 
         case codePHP:{
-            pushToStack(S());
+            pushToStack(CPU_S);
             pc ++;
             break;
         }
 
         case codePLA:{
             A = popFromStack();
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc ++;
             break;
         }
 
         case codePLP:{
             unsigned char flags = popFromStack();
-            N = (flags >> 7) & 0x1;
-            V = (flags >> 6) & 0x1;
+            CPU_N = (flags >> 7) & 0x1;
+            CPU_V = (flags >> 6) & 0x1;
 
-            D = (flags >> 3) & 0x1;
-            I = (flags >> 2) & 0x1;
-            Z = (flags >> 1) & 0x1;
-            C = (flags >> 0) & 0x1;
+            CPU_D = (flags >> 3) & 0x1;
+            CPU_I = (flags >> 2) & 0x1;
+            CPU_Z = (flags >> 1) & 0x1;
+            CPU_C = (flags >> 0) & 0x1;
             pc ++;
             break;
         }
 
         caseModes_A_ZP_ZPX_AB_ABX(codeROL):{
             unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeROL);
-            C = (m & 0x80) >> 7;
+            CPU_C = (m & 0x80) >> 7;
             m = m << 1;
-            m = m & C;
-            Z = !m;
-            N = (m & 0x80) >> 7;
+            m = m & CPU_C;
+            CPU_Z = !m;
+            CPU_N = (m & 0x80) >> 7;
             setmem_A_ZP_ZPX_AB_ABX(opcode - codeROL, m);
             pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeROL);
             break;
@@ -1449,11 +1572,11 @@ void Chip::executeOpcode(){
 
         caseModes_A_ZP_ZPX_AB_ABX(codeROR):{
             unsigned char m = mem_A_ZP_ZPX_AB_ABX(opcode - codeROR);
-            C = m & 0x1;
+            CPU_C = m & 0x1;
             m = m >> 1;
-            m = m & (C << 7);
-            Z = !m;
-            N = (m & 0x80) >> 7;
+            m = m & (CPU_C << 7);
+            CPU_Z = !m;
+            CPU_N = (m & 0x80) >> 7;
             setmem_A_ZP_ZPX_AB_ABX(opcode - codeROR, m);
             pc += opcodeLength_A_ZP_ZPX_AB_ABX(opcode - codeROR);
             break;
@@ -1461,24 +1584,24 @@ void Chip::executeOpcode(){
 
         case codeRTI:{
             unsigned char flags = popFromStack();
-            N = (flags >> 5) & 0x1;
-            Z = (flags >> 4) & 0x1;
-            C = (flags >> 3) & 0x1;
-            I = (flags >> 2) & 0x1;
-            D = (flags >> 1) & 0x1;
-            V = (flags) & 0x1;
+            CPU_N = (flags >> 5) & 0x1;
+            CPU_Z = (flags >> 4) & 0x1;
+            CPU_C = (flags >> 3) & 0x1;
+            CPU_I = (flags >> 2) & 0x1;
+            CPU_D = (flags >> 1) & 0x1;
+            CPU_V = (flags) & 0x1;
             pc = popFromStack();
             break;
         }
 
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeSBC):{
             unsigned char m = mem_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSBC);
-            unsigned short temp = A - m - (!C);
-            C = temp <= 0xFF;
-            V = (A ^ m) & (A ^ temp) & 0x80;
+            unsigned short temp = A - m - (!CPU_C);
+            CPU_C = temp <= 0xFF;
+            CPU_V = (A ^ m) & (A ^ temp) & 0x80;
             A = (unsigned char)temp;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += opcodeLength_I_ZP_ZPX_AB_ABX_ABY_IX_IY(opcode - codeSBC);
             break;
         }
@@ -1504,40 +1627,40 @@ void Chip::executeOpcode(){
 
         case codeTAX:{
             X = A;
-            Z = !X;
-            N = (X & 0x80) >> 7;
+            CPU_Z = !X;
+            CPU_N = (X & 0x80) >> 7;
             pc += 1;
             break;
         }
 
         case codeTAY:{
             Y = A;
-            Z = !Y;
-            N = (Y & 0x80) >> 7;
+            CPU_Z = !Y;
+            CPU_N = (Y & 0x80) >> 7;
             pc += 1;
             break;
         }
 
         case codeTSX:{
             X = stackPointer;
-            Z = !Y;
-            N = (Y & 0x80) >> 7;
+            CPU_Z = !Y;
+            CPU_N = (Y & 0x80) >> 7;
             pc += 1;
             break;
         }
 
         case codeTXA:{
             A = X;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += 1;
             break;
         }
 
         case codeTYA:{
             A = Y;
-            Z = !A;
-            N = (A & 0x80) >> 7;
+            CPU_Z = !A;
+            CPU_N = (A & 0x80) >> 7;
             pc += 1;
             break;
         }
