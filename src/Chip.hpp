@@ -375,6 +375,8 @@ public:
     unsigned char getMemory(unsigned short address, bool passive = false);
 
     void setMemory(unsigned short address, unsigned char value);
+    
+    void setCharROM(unsigned address, unsigned char value);
 
     void pushToStack(unsigned char value);
 

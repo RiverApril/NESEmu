@@ -72,7 +72,7 @@ bool loadFile(const char* path, Chip* chip){
         loc += size;
         size = (CHR_ROMSize*0x2000);
         for(unsigned int i=0; i<size; i++){
-            chip->setMemory(0xE000+i, (unsigned char)buffer[loc + i]);
+            chip->setCharROM(i, (unsigned char)buffer[loc + i]);
         }
         
         
@@ -89,6 +89,26 @@ void setMemory(int address, unsigned char value){
 
 unsigned char getMemoryPassive(int address){
     return chip.getMemory((unsigned short)address, true);
+}
+
+bool dumpMemoryToFile(const char* path, unsigned char (*getMem)(int), unsigned int start, unsigned int end){
+    ofstream file;
+    file.open(path, ios::binary | ios::out);
+    
+    unsigned int size = end-start;
+    unsigned char buffer[size];
+    
+    for(int i=0;i<size;i++){
+        buffer[i] = getMem(start+i);
+    }
+    
+    if(file){
+        file.write((const char*)buffer, size);
+        file.close();
+        return true;
+    }
+    return false;
+    
 }
 
 int main(int argc, const char * argv[]) {
@@ -169,7 +189,11 @@ int main(int argc, const char * argv[]) {
                     }
                 }
                 
-                printf("F921: %02X", chip.getMemory(0xF931));
+                /*if(tick == 0x0001){
+                    dumpMemoryToFile("dump.bin", &getMemoryPassive, 0, 0xFFFF);
+                }*/
+                
+                //printf("F921: %02X", chip.getMemory(0xF931));
                 
                 /*printf("Stack: [");
                 for(int i=0;i<chip.stackPointer;i++){

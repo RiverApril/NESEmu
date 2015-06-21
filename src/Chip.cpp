@@ -1204,6 +1204,10 @@ void Chip::setMemory(unsigned short address, unsigned char value){
     }
 }
 
+void Chip::setCharROM(unsigned address, unsigned char value){
+    //todo
+}
+
 void Chip::pushToStack(unsigned char value){
     stack[stackPointer] = value;
     if(stackPointer > 0x00){
