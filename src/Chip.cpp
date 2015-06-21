@@ -28,6 +28,23 @@ void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
     CPU_Flags.bits.bit4 = false;
     CPU_Flags.bits.bit5 = true;
     
+    PPU_CTRL = 0;
+    PPU_MASK = 0;
+    PPU_STATUS = 0;
+    OAM_ADDR = 0;
+    OAM_DATA = 0;
+    
+    PPU_SCROLL_INDEX = 0;
+    PPU_SCROLL_X = 0;
+    PPU_SCROLL_Y = 0;
+    
+    PPU_ADDR_INDEX = 0;
+    PPU_ADDR_MSB = 0;
+    PPU_ADDR_LSB = 0;
+    
+    PPU_DATA = 0;
+    OAM_DMA = 0;
+    
     if(resetRAM){
         for(unsigned int i=0;i<0x800;i++){
             memoryRAM[i] = 0;
@@ -1546,14 +1563,15 @@ void Chip::executeOpcode(){
         }
 
         case codePLP:{
-            unsigned char flags = popFromStack();
-            CPU_N = (flags >> 7) & 0x1;
+            /*unsigned char flags*/CPU_S = popFromStack();
+            
+            /*CPU_N = (flags >> 7) & 0x1;
             CPU_V = (flags >> 6) & 0x1;
 
             CPU_D = (flags >> 3) & 0x1;
             CPU_I = (flags >> 2) & 0x1;
             CPU_Z = (flags >> 1) & 0x1;
-            CPU_C = (flags >> 0) & 0x1;
+            CPU_C = (flags >> 0) & 0x1;*/
             pc ++;
             break;
         }
@@ -1583,13 +1601,14 @@ void Chip::executeOpcode(){
         }
 
         case codeRTI:{
-            unsigned char flags = popFromStack();
-            CPU_N = (flags >> 5) & 0x1;
+            /*unsigned char flags*/CPU_S = popFromStack();
+            
+            /*CPU_N = (flags >> 5) & 0x1;
             CPU_Z = (flags >> 4) & 0x1;
             CPU_C = (flags >> 3) & 0x1;
             CPU_I = (flags >> 2) & 0x1;
             CPU_D = (flags >> 1) & 0x1;
-            CPU_V = (flags) & 0x1;
+            CPU_V = (flags) & 0x1;*/
             pc = popFromStack();
             break;
         }
