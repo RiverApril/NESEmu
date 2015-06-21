@@ -219,7 +219,13 @@ public:
 #define CPU_V CPU_Flags.bits.bit6
 #define CPU_N CPU_Flags.bits.bit7
 
-#define CPU_S CPU_Flags.byte
+    void CPU_S_SET(unsigned char v){
+        (CPU_Flags.byte = (v|0x20)&(~0x10));
+    }
+    
+    unsigned char CPU_S_GET(){
+        return ((CPU_Flags.byte|0x20)&(~0x10));
+    }
 
 
     BitByteUnion PPU_CTRL_Flags;

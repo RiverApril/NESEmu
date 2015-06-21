@@ -1553,7 +1553,7 @@ void Chip::executeOpcode(){
         }
 
         case codePHP:{
-            pushToStack(CPU_S);
+            pushToStack(CPU_S_GET());
             pc ++;
             break;
         }
@@ -1567,7 +1567,7 @@ void Chip::executeOpcode(){
         }
 
         case codePLP:{
-            /*unsigned char flags*/CPU_S = popFromStack();
+            /*unsigned char flags*/CPU_S_SET(popFromStack());
             
             /*CPU_N = (flags >> 7) & 0x1;
             CPU_V = (flags >> 6) & 0x1;
@@ -1605,7 +1605,7 @@ void Chip::executeOpcode(){
         }
 
         case codeRTI:{
-            /*unsigned char flags*/CPU_S = popFromStack();
+            /*unsigned char flags*/CPU_S_SET(popFromStack());
             
             /*CPU_N = (flags >> 5) & 0x1;
             CPU_Z = (flags >> 4) & 0x1;
@@ -1666,8 +1666,8 @@ void Chip::executeOpcode(){
 
         case codeTSX:{
             X = stackPointer;
-            CPU_Z = !Y;
-            CPU_N = (Y & 0x80) >> 7;
+            CPU_Z = !X;
+            CPU_N = (X & 0x80) >> 7;
             pc += 1;
             break;
         }
