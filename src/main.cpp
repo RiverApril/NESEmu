@@ -161,7 +161,7 @@ int main(int argc, const char * argv[]) {
                 display->drawPixelAt(pcx, 0, 0xFF, 0, 0, 0x80, 2, pcy);
                 
                 
-                fprintf(stdout, "%04d pc:%04X SP:%02X  A:%02X X:%02X Y:%02X  P:%02X{N%dV%d?%d?%dD%dI%dZ%dC%d} %s (%02X) ", tick, chip.pc, chip.stackPointer, chip.A, chip.X, chip.Y, chip.CPU_S_GET(), chip.CPU_N, chip.CPU_V, chip.CPU_Flags.bits.bit5, chip.CPU_Flags.bits.bit4, chip.CPU_D, chip.CPU_I, chip.CPU_Z, chip.CPU_C, chip.opcodeName(chip.opcode), chip.opcode);
+                fprintf(stdout, "%04d pc:%04X SP:%02X  A:%02X X:%02X Y:%02X  P:%02X {N%dV%d?%d?%dD%dI%dZ%dC%d} %s (%02X) ", tick, chip.pc, chip.stackPointer, chip.A, chip.X, chip.Y, chip.CPU_S_GET(), chip.CPU_N, chip.CPU_V, chip.CPU_Flags.bits.bit5, chip.CPU_Flags.bits.bit4, chip.CPU_D, chip.CPU_I, chip.CPU_Z, chip.CPU_C, chip.opcodeName(chip.opcode), chip.opcode);
                 
                 unsigned char len = chip.opcodeLength(chip.opcode);
                 
