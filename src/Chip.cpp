@@ -25,8 +25,8 @@ void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
     CPU_D = false;
     CPU_I = true;
     
-    CPU_Flags.bits.bit4 = false;
-    CPU_Flags.bits.bit5 = true;
+    CPU_Flag4 = false;
+    CPU_Flag5 = true;
     
     PPU_CTRL = 0;
     PPU_MASK = 0;
@@ -1342,6 +1342,8 @@ void Chip::executeOpcode(){
         }
 
         case codeBRK:{
+            CPU_Flag4 = true;
+            CPU_Flag5 = true;
             ERR_META = opcode;
             throw EXIT_BREAK;
         }
@@ -1553,7 +1555,7 @@ void Chip::executeOpcode(){
         }
 
         case codePHP:{
-            pushToStack(CPU_S_GET());
+            pushToStack(CPU_S_GET()|0x10);
             pc ++;
             break;
         }
@@ -1567,7 +1569,7 @@ void Chip::executeOpcode(){
         }
 
         case codePLP:{
-            /*unsigned char flags*/CPU_S_SET(popFromStack());
+            /*unsigned char flags*/CPU_S_SET(popFromStack()&0xEF);
             
             /*CPU_N = (flags >> 7) & 0x1;
             CPU_V = (flags >> 6) & 0x1;

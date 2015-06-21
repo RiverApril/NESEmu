@@ -216,15 +216,17 @@ public:
 #define CPU_Z CPU_Flags.bits.bit1
 #define CPU_I CPU_Flags.bits.bit2
 #define CPU_D CPU_Flags.bits.bit3
+#define CPU_Flag4 CPU_Flags.bits.bit4
+#define CPU_Flag5 CPU_Flags.bits.bit5
 #define CPU_V CPU_Flags.bits.bit6
 #define CPU_N CPU_Flags.bits.bit7
 
     void CPU_S_SET(unsigned char v){
-        (CPU_Flags.byte = (v|0x20)&(~0x10));
+        CPU_Flags.byte = (v|0x20);//&(~0x10);
     }
     
     unsigned char CPU_S_GET(){
-        return ((CPU_Flags.byte|0x20)&(~0x10));
+        return (CPU_Flags.byte|0x20);//&(~0x10);
     }
 
 
