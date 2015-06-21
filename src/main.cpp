@@ -10,9 +10,9 @@ Chip chip;
 
 void printMemory(unsigned char* memory, unsigned int memoryMin, unsigned int memoryDisplayAmount){
     for(unsigned int i=memoryMin;i<memoryMin+memoryDisplayAmount;i++){
-        printf("%02X ", memory[i]);
+        fprintf(stderr, "%02X ", memory[i]);
     }
-    printf("\n");
+    fprintf(stderr, "\n");
 }
 
 bool loadFile(const char* path, Chip* chip){
@@ -28,7 +28,7 @@ bool loadFile(const char* path, Chip* chip){
         file.read(buffer, fileSize);
         file.close();
         
-        printf("File Size: %X\n", fileSize);
+        fprintf(stderr, "File Size: %X\n", fileSize);
         
         unsigned char header[16];
         for(unsigned int i=0;i<0x10;i++){
@@ -36,7 +36,7 @@ bool loadFile(const char* path, Chip* chip){
         }
         
         if(!(header[0] == 0x4E && header[1] == 0x45 && header[2] == 0x53 && header[3] == 0x1A)){
-            printf("File does not start with NES<eof> [4E 45 53 1A]\n");
+            fprintf(stderr, "File does not start with NES<eof> [4E 45 53 1A]\n");
             return false;
         }
         
@@ -58,8 +58,8 @@ bool loadFile(const char* path, Chip* chip){
             chip.setMemory(i+startIndex, (unsigned char)buffer[i]);
         }*/
         
-        printf("PRG ROM Size: %X * 4000 = %X\n", PRG_ROMSize, PRG_ROMSize*0x4000);
-        printf("CHR ROM Size: %X * 2000 = %X\n", CHR_ROMSize, CHR_ROMSize*0x2000);
+        fprintf(stderr, "PRG ROM Size: %X * 4000 = %X\n", PRG_ROMSize, PRG_ROMSize*0x4000);
+        fprintf(stderr, "CHR ROM Size: %X * 2000 = %X\n", CHR_ROMSize, CHR_ROMSize*0x2000);
         
         unsigned int loc;
         unsigned int size;
@@ -78,7 +78,7 @@ bool loadFile(const char* path, Chip* chip){
         
         return true;
     }else{
-        printf("Could not open file: '%s'\n", path);
+        fprintf(stderr, "Could not open file: '%s'\n", path);
         return false;
     }
 }
@@ -121,16 +121,16 @@ int main(int argc, const char * argv[]) {
         //Compilation not fully implemented.
     }
     if(runPath[0] == '\0'){
-        printf("Please pecify a program to run.\n");
+        fprintf(stderr, "Please pecify a program to run.\n");
         return 0;
     }
-    printf("Loading program: '%s'\n", runPath);
+    fprintf(stderr, "Loading program: '%s'\n", runPath);
     chip.reset(true, true, true);
     bool success = loadFile(runPath, &chip);
     if(success){
-        printf("Program loaded, running.\n");
+        fprintf(stderr, "Program loaded, running.\n");
     }else{
-        printf("Failed to load program.\n");
+        fprintf(stderr, "Failed to load program.\n");
         return 0;
     }
 
@@ -161,45 +161,45 @@ int main(int argc, const char * argv[]) {
                 display->drawPixelAt(pcx, 0, 0xFF, 0, 0, 0x80, 2, pcy);
                 
                 
-                printf("\n%04d pc:%04X SP:%02X  A:%02X X:%02X Y:%02X  P:%02X{N%dV%d?1?0D%dI%dZ%dC%d} %s (%02X) ", tick, chip.pc, chip.stackPointer, chip.A, chip.X, chip.Y, chip.CPU_S, chip.CPU_N, chip.CPU_V, chip.CPU_D, chip.CPU_I, chip.CPU_Z, chip.CPU_C, chip.opcodeName(chip.opcode), chip.opcode);
+                fprintf(stdout, "\n%04d pc:%04X SP:%02X  A:%02X X:%02X Y:%02X  P:%02X{N%dV%d?1?0D%dI%dZ%dC%d} %s (%02X) ", tick, chip.pc, chip.stackPointer, chip.A, chip.X, chip.Y, chip.CPU_S, chip.CPU_N, chip.CPU_V, chip.CPU_D, chip.CPU_I, chip.CPU_Z, chip.CPU_C, chip.opcodeName(chip.opcode), chip.opcode);
                 
                 unsigned char len = chip.opcodeLength(chip.opcode);
                 
                 switch(len){
                     case 1:
-                        printf("[     ]");
+                        fprintf(stdout, "[     ]");
                         break;
                     case 2:
-                        printf("[%02X   ]", chip.byteAfterOpcode);
+                        fprintf(stdout, "[%02X   ]", chip.byteAfterOpcode);
                         break;
                     case 3:
-                        printf("[%02X %02X]", chip.byteAfterOpcode, chip.byte2AfterOpcode);
+                        fprintf(stdout, "[%02X %02X]", chip.byteAfterOpcode, chip.byte2AfterOpcode);
                         break;
                     default:
-                        printf("LEN: %d", len);
+                        fprintf(stdout, "LEN: %d", len);
                         break;
                     
                 }
                 
                 chip.executeOpcode();
-                printf("\n");
+                /*fprintf(stderr, "\n");
                 for(unsigned int i=0;i<0x800;i++){
                     if(chip.getMemory(i)){
-                        printf(" %04X=%02X", i, chip.getMemory(i));
+                        fprintf(stderr, " %04X=%02X", i, chip.getMemory(i));
                     }
-                }
+                }*/
                 
                 /*if(tick == 0x0001){
                     dumpMemoryToFile("dump.bin", &getMemoryPassive, 0, 0xFFFF);
                 }*/
                 
-                //printf("F921: %02X", chip.getMemory(0xF931));
+                //fprintf(stderr, "F921: %02X", chip.getMemory(0xF931));
                 
-                /*printf("Stack: [");
+                /*fprintf(stderr, "Stack: [");
                 for(int i=0;i<chip.stackPointer;i++){
-                    printf("%x%s", chip.stack[i], (i==(chip.stackPointer-1))?"":", ");
+                    fprintf(stderr, "%x%s", chip.stack[i], (i==(chip.stackPointer-1))?"":", ");
                 }
-                printf("]\n");*/
+                fprintf(stderr, "]\n");*/
                 
             }
             
@@ -209,28 +209,28 @@ int main(int argc, const char * argv[]) {
             chipRunning = false;
             switch (EXIT_CODE) {
                 case EXIT_BREAK:
-                    printf("\nEXIT - Break on Opcode: %02X\n", chip.ERR_META);
+                    fprintf(stderr, "\nEXIT - Break on Opcode: %02X\n", chip.ERR_META);
                     break;
                 case EXIT_ERR_UNKNOWN_OPCODE:
-                    printf("\nERR - Unknown Opcode: %02X\n", chip.ERR_META);
+                    fprintf(stderr, "\nERR - Unknown Opcode: %02X\n", chip.ERR_META);
                     break;
                 case EXIT_ERR_STACK_OVERFLOW:
-                    printf("\nERR - Stack Overflow\n");
+                    fprintf(stderr, "\nERR - Stack Overflow\n");
                     break;
                 case EXIT_ERR_STACK_UNDERFLOW:
-                    printf("\nERR - Stack Underflow\n");
+                    fprintf(stderr, "\nERR - Stack Underflow\n");
                     break;
                 case EXIT_ERR_UNKNOWN_ADDRESS_MODE:
-                    printf("\nERR - Unknown Address Mode: %X\n", chip.ERR_META);
+                    fprintf(stderr, "\nERR - Unknown Address Mode: %X\n", chip.ERR_META);
                     break;
                 case EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE:
-                    printf("\nERR - Memory Address out of range: %X\n", chip.ERR_META);
+                    fprintf(stderr, "\nERR - Memory Address out of range: %X\n", chip.ERR_META);
                     break;
                 default:
-                    printf("\nERR: %X, %X\n", EXIT_CODE, chip.ERR_META);
+                    fprintf(stderr, "\nERR: %X, %X\n", EXIT_CODE, chip.ERR_META);
                     break;
             }
-            printf("\nPress excape in the window to exit.\n");
+            fprintf(stderr, "\nPress excape in the window to exit.\n");
         }
     }
 
