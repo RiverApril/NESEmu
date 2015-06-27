@@ -190,10 +190,10 @@ union BitByteUnion {
 class Chip{
 
 public:
-    
+
     bool controllerP1Buffer[8];
     bool controllerP2Buffer[8];
-    
+
     unsigned char controllerP1Index = 0;
     unsigned char controllerP2Index = 0;
 
@@ -208,10 +208,10 @@ public:
     //X and Y Registers
     unsigned char X = 0x00;
     unsigned char Y = 0x00;
-    
-    
+
+
     BitByteUnion CPU_Flags;
-    
+
 #define CPU_C CPU_Flags.bits.bit0
 #define CPU_Z CPU_Flags.bits.bit1
 #define CPU_I CPU_Flags.bits.bit2
@@ -224,14 +224,14 @@ public:
     void CPU_S_SET(unsigned char v){
         CPU_Flags.byte = (v|0x20);//&(~0x10);
     }
-    
+
     unsigned char CPU_S_GET(){
         return (CPU_Flags.byte|0x20);//&(~0x10);
     }
 
 
     BitByteUnion PPU_CTRL_Flags;
-    
+
 #define PPU_CTRL_N0 PPU_CTRL_Flags.bits.bit0
 #define PPU_CTRL_N1 PPU_CTRL_Flags.bits.bit1
 #define PPU_CTRL_I PPU_CTRL_Flags.bits.bit2
@@ -245,7 +245,7 @@ public:
 
 
     BitByteUnion PPU_MASK_Flags;
-    
+
 #define PPU_MASK_G PPU_MASK_Flags.bits.bit0
 #define PPU_MASK_m PPU_MASK_Flags.bits.bit1
 #define PPU_MASK_M PPU_MASK_Flags.bits.bit2
@@ -259,7 +259,7 @@ public:
 
 
     BitByteUnion PPU_STATUS_Flags;
-    
+
 #define PPU_STATUS_O PPU_STATUS_Flags.bits.bit5
 #define PPU_STATUS_S PPU_STATUS_Flags.bits.bit6
 #define PPU_STATUS_V PPU_STATUS_Flags.bits.bit7
@@ -268,15 +268,15 @@ public:
 
     unsigned char OAM_ADDR;
     unsigned char OAM_DATA;
-    
+
     unsigned char PPU_SCROLL_INDEX;
     unsigned char PPU_SCROLL_X;
     unsigned char PPU_SCROLL_Y;
-    
+
     unsigned char PPU_ADDR_INDEX;
     unsigned char PPU_ADDR_MSB;
     unsigned char PPU_ADDR_LSB;
-    
+
     unsigned char PPU_DATA;
     unsigned char OAM_DMA;
 
@@ -285,42 +285,48 @@ public:
     unsigned char memoryPPURegisters[0x8] = {0};
     unsigned char memoryAPUandIORegisters[0x20] = {0};
     unsigned char memoryProgramMemory[0xBFE0] = {0};
-    
+
+    unsigned char ppuMemoryPatternTables[0x2000] = {0};
+    unsigned char ppuMemoryNameTables[0x1000] = {0};
+    unsigned char ppuMemoryPalleteRAMIndexes[0x20] = {0};
+
+    unsigned char objAttrMemory[0x10] = {0};
+
     //Note: all numbers that follow in these comments are hexidecimal.
-    
+
     ////// Memory Mapping details:
     //// Work RAM
     // Address         :    0 - 1FFF
     // Translation     : address % 800
     // Emulator Memory : memoryRAM[800]
-    
+
     //// PPU Registers
     // Address         : 2000 - 3FFF
     // Translation     : address % 8
     // Emulator Memory : memoryPPURegisters[8]
-    
+
     //// APU and IO Registers
     // Address         : 4000 - 401F
     // Translation     : address - 4000
     // Emulator Memory : memoryAPUandIORegisters[20]
-    
+
     //// Program ROM, SRAM, RAM
     // Address         : 4020 - FFFF
     // Translation     : address - 4020
     // Emulator Memory : memoryProgramMemory[BFE0]
-    
-    
+
+
     //// Real Addresses:
     //    0 -  7FF : Work RAM
     //  800 -  FFF : Mirror of Work RAM
     // 1000 - 17FF : Mirror of Work RAM
     // 1800 - 1FFF : Mirror of Work RAM
-    
+
     // 2000 - 2007 : PPU Registers
     // 2008 - 3FFF : Every 8 are mirrors of PPU Registers
-    
-    // 4000 - 401F : APU and IO Registers 
-    
+
+    // 4000 - 401F : APU and IO Registers
+
     // 4020 - 5FFF : Program ROM
     // 6000 - 7FFF : SRAM
     // 8000 - BFFF : Program RAM
@@ -333,11 +339,11 @@ public:
     unsigned char opcode;
     unsigned char byteAfterOpcode;
     unsigned char byte2AfterOpcode;
-    
+
     void reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM);
 
     const char* opcodeName(unsigned char code);
-    
+
     unsigned char opcodeLength(unsigned char code);
 
     const unsigned short address_AB_I(unsigned char mode);
@@ -383,16 +389,20 @@ public:
     unsigned char getMemory(unsigned short address, bool passive = false);
 
     void setMemory(unsigned short address, unsigned char value);
-    
+
+    unsigned char getPPUMemory(unsigned short address, bool passive = false);
+
+    void setPPUMemory(unsigned short address, unsigned char value);
+
     void setCharROM(unsigned address, unsigned char value);
 
     void pushToStack(unsigned char value);
 
     unsigned char popFromStack();
-    
+
     void prepareOpcode();
     void executeOpcode();
-    
+
 };
 
 

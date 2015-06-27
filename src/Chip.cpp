@@ -2,55 +2,55 @@
 #include "Chip.hpp"
 
 void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
-    
+
     for(unsigned char i=0;i<8;i++){
         controllerP1Buffer[i] = false;
         controllerP2Buffer[i] = false;
     }
     controllerP1Index = 0;
     controllerP2Index = 0;
-    
+
     ERR_META = 0;
-    
+
     pc = 0xC000;
-    
+
     A = 0;
     X = 0;
     Y = 0;
-    
+
     CPU_C = false;
     CPU_V = false;
     CPU_Z = false;
     CPU_N = false;
     CPU_D = false;
     CPU_I = true;
-    
+
     CPU_Flag4 = false;
     CPU_Flag5 = true;
-    
+
     PPU_CTRL = 0;
     PPU_MASK = 0;
     PPU_STATUS = 0;
     OAM_ADDR = 0;
     OAM_DATA = 0;
-    
+
     PPU_SCROLL_INDEX = 0;
     PPU_SCROLL_X = 0;
     PPU_SCROLL_Y = 0;
-    
+
     PPU_ADDR_INDEX = 0;
     PPU_ADDR_MSB = 0;
     PPU_ADDR_LSB = 0;
-    
+
     PPU_DATA = 0;
     OAM_DMA = 0;
-    
+
     if(resetRAM){
         for(unsigned int i=0;i<0x800;i++){
             memoryRAM[i] = 0;
         }
     }
-    
+
     if(resetPPUandAPUandIO){
         for(unsigned int i=0;i<0x8;i++){
             memoryPPURegisters[i] = 0;
@@ -59,23 +59,23 @@ void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
             memoryAPUandIORegisters[i] = 0;
         }
     }
-    
+
     if(resetPRGRAM){
         for(unsigned int i=0;i<0xBFE0;i++){
             memoryProgramMemory[i] = 0;
         }
     }
-    
+
     stackPointer = 0xFD;
-    
+
     for(unsigned short i=0;i<0x100;i++){
         stack[i] = 0;
     }
-    
+
     opcode = 0;
     byteAfterOpcode = 0;
     byte2AfterOpcode = 0;
-    
+
 }
 
 const char* Chip::opcodeName(unsigned char code){
@@ -1014,20 +1014,42 @@ unsigned char Chip::opcodeLength_ZP_ZPY_AB(unsigned char mode){
             throw EXIT_ERR_UNKNOWN_ADDRESS_MODE;
     }
 }
+unsigned char Chip::getPPUMemory(unsigned short address, bool passive){
+    switch(address){
+
+        default:{
+            if(address < 0x2000){
+                return ppuMemoryPatternTables[address];
+            }else if(address >= 0x2000 && address < 0x3000){
+                return ppuMemoryPatternTables[address-0x2000];
+            }else if(address >= 0x3000 && address < 0x3F00){
+                return ppuMemoryPatternTables[address-0x3000];
+            }else{
+                ERR_META = address;
+                throw EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE;
+            }
+        }
+
+    }
+}
+
+void Chip::setPPUMemory(unsigned short address, unsigned char value){
+
+}
 
 unsigned char Chip::getMemory(unsigned short address, bool passive){
     switch(address){
-        
+
         case 0x2000:{
             if(passive)return PPU_CTRL;
             return 0;
         }
-            
+
         case 0x2001:{
             if(passive)return PPU_MASK;
             return 0;
         }
-            
+
         case 0x2002:{
             if(!passive){
                 PPU_SCROLL_INDEX = 0;
@@ -1035,16 +1057,16 @@ unsigned char Chip::getMemory(unsigned short address, bool passive){
             }
             return PPU_STATUS;
         }
-            
+
         case 0x2003:{
             if(passive)return OAM_ADDR;
             return 0;
         }
-            
+
         case 0x2004:{
             return OAM_DATA;
         }
-            
+
         case 0x2005:{
             if(passive){
                 switch(PPU_SCROLL_INDEX){
@@ -1056,7 +1078,7 @@ unsigned char Chip::getMemory(unsigned short address, bool passive){
             }
             return 0;
         }
-            
+
         case 0x2006:{
             if(passive){
                 switch(PPU_ADDR_INDEX){
@@ -1068,16 +1090,16 @@ unsigned char Chip::getMemory(unsigned short address, bool passive){
             }
             return 0;
         }
-            
+
         case 0x2007:{
             return PPU_DATA;
         }
-            
+
         case 0x4014:{
             if(passive)return OAM_DMA;
             return 0;
         }
-        
+
         case 0x4016:{
             if(controllerP1Index < 0x8){
                 unsigned char v = (controllerP1Buffer[controllerP1Index] ? 0x1 : 0x0) | 0xA0;
@@ -1087,7 +1109,7 @@ unsigned char Chip::getMemory(unsigned short address, bool passive){
                 return 0xA1;
             }
         }
-            
+
         case 0x4017:{
             if(controllerP2Index < 0x8){
                 unsigned char v = (controllerP2Buffer[controllerP2Index] ? 0x1 : 0x0) | 0xA0;
@@ -1097,7 +1119,7 @@ unsigned char Chip::getMemory(unsigned short address, bool passive){
                 return 0xA1;
             }
         }
-        
+
         default:{
             if(address < 0x2000){
                 return memoryRAM[address % 0x800];
@@ -1112,37 +1134,38 @@ unsigned char Chip::getMemory(unsigned short address, bool passive){
                 throw EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE;
             }
         }
-        
+
     }
 }
 
 void Chip::setMemory(unsigned short address, unsigned char value){
     switch(address){
-        
+
         case 0x2000:{
             PPU_CTRL = value;
             return;
         }
-            
+
         case 0x2001:{
             PPU_MASK = value;
             return;
         }
-            
+
         case 0x2002:{
             return;
         }
-            
+
         case 0x2003:{
             OAM_ADDR = value;
             return;
         }
-            
+
         case 0x2004:{
             OAM_DATA = value;
+            OAM_ADDR ++;
             return;
         }
-            
+
         case 0x2005:{
             switch(PPU_SCROLL_INDEX){
                 case 0:
@@ -1156,7 +1179,7 @@ void Chip::setMemory(unsigned short address, unsigned char value){
             }
             return;
         }
-            
+
         case 0x2006:{
             switch(PPU_ADDR_INDEX){
                 case 0:
@@ -1170,22 +1193,22 @@ void Chip::setMemory(unsigned short address, unsigned char value){
             }
             return;
         }
-            
+
         case 0x2007:{
             PPU_DATA = value;
         }
-            
+
         case 0x4014:{
             OAM_DMA = value;
         }
-        
+
         case 0x4016:{
             if(value & 0x1){
                 controllerP1Index = 0;
             }
             return;
         }
-        
+
         default:{
             if(address < 0x2000){
                 memoryRAM[address % 0x800] = value;
@@ -1233,7 +1256,7 @@ void Chip::prepareOpcode(){
 }
 
 void Chip::executeOpcode(){
-    
+
     switch(opcode){
 
         caseModes_I_ZP_ZPX_AB_ABX_ABY_IX_IY(codeADC):{
@@ -1570,7 +1593,7 @@ void Chip::executeOpcode(){
 
         case codePLP:{
             /*unsigned char flags*/CPU_S_SET(popFromStack()&0xEF);
-            
+
             /*CPU_N = (flags >> 7) & 0x1;
             CPU_V = (flags >> 6) & 0x1;
 
@@ -1608,7 +1631,7 @@ void Chip::executeOpcode(){
 
         case codeRTI:{
             /*unsigned char flags*/CPU_S_SET(popFromStack());
-            
+
             /*CPU_N = (flags >> 5) & 0x1;
             CPU_Z = (flags >> 4) & 0x1;
             CPU_C = (flags >> 3) & 0x1;
