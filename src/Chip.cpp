@@ -1,6 +1,22 @@
 
 #include "Chip.hpp"
 
+void executePPU(Chip* chip){
+    while(chip->runPPU){
+
+    }
+}
+
+void Chip::startPPU(){
+    runPPU = true;
+    threadPPU = thread(executePPU, this);
+}
+
+void Chip::stopPPU(){
+    runPPU = false;
+    threadPPU.join();
+}
+
 void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
 
     for(unsigned char i=0;i<8;i++){
@@ -12,7 +28,7 @@ void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
 
     ERR_META = 0;
 
-    pc = 0xC000;
+    pc = 0xC00C;
 
     A = 0;
     X = 0;
@@ -31,6 +47,8 @@ void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
     PPU_CTRL = 0;
     PPU_MASK = 0;
     PPU_STATUS = 0;
+    PPU_STATUS_V = 1;
+    PPU_STATUS_O = 1;
     OAM_ADDR = 0;
     OAM_DATA = 0;
 

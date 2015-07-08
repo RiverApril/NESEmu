@@ -28,7 +28,7 @@ TMP := $(SRCS:.cpp=.o)
 SRCSLASH := src/
 OBJSLASH := obj/
 OBJS := $(subst $(SRCSLASH),$(OBJSLASH),$(TMP))
-CPP_FLAGS := -Wall -g -std=c++11
+CPP_FLAGS := -g -std=c++11
 LIB_FLAGS := -lSDL2
 
 

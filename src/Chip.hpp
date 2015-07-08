@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <stack>
 #include <stdlib.h>
+#include <thread>
+
+using namespace std;
 
 
 #define modeAccumulator 0x08
@@ -191,6 +194,9 @@ class Chip{
 
 public:
 
+    thread threadPPU;
+    bool runPPU = false;
+
     bool controllerP1Buffer[8];
     bool controllerP2Buffer[8];
 
@@ -246,7 +252,7 @@ public:
 
     BitByteUnion PPU_MASK_Flags;
 
-#define PPU_MASK_G PPU_MASK_Flags.bits.bit0
+#define PPU_MASK_g PPU_MASK_Flags.bits.bit0
 #define PPU_MASK_m PPU_MASK_Flags.bits.bit1
 #define PPU_MASK_M PPU_MASK_Flags.bits.bit2
 #define PPU_MASK_b PPU_MASK_Flags.bits.bit3
@@ -339,6 +345,9 @@ public:
     unsigned char opcode;
     unsigned char byteAfterOpcode;
     unsigned char byte2AfterOpcode;
+
+    void startPPU();
+    void stopPPU();
 
     void reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM);
 

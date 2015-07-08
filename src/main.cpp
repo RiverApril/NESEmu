@@ -118,7 +118,7 @@ int main(int argc, const char * argv[]) {
         runPath = argv[1];
     }
     if(compilePath[0] == '\0'){
-        //Compilation not fully implemented.
+        //Compilation not implemented.
     }
     if(runPath[0] == '\0'){
         fprintf(stderr, "Please pecify a program to run.\n");
@@ -139,6 +139,8 @@ int main(int argc, const char * argv[]) {
     bool chipRunning = true;
 
     int tick = 0;
+
+    chip.startPPU();
 
     while(!(display->quit || display->errored)) {
         try{
@@ -236,6 +238,8 @@ int main(int argc, const char * argv[]) {
             fprintf(stderr, "\nPress excape in the window to exit.\n");
         }
     }
+
+    chip.stopPPU();
 
     delete display;
 
