@@ -91,7 +91,7 @@ void Chip::reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM){
         }
     }
 
-    stackPointer = 0xFF;
+    stackPointer = 0xFD;
 
     for(unsigned short i=0;i<0x100;i++){
         stack[i] = 0;
@@ -1542,7 +1542,7 @@ void Chip::executeOpcode(){
         CPU_I = true;
         pushToStack((pc&0xFF00) >> 8);
         pushToStack(pc&0x00FF);
-        pushToStack(CPU_S_GET());
+        pushToStack(CPU_S_GET(false, true));
         pc = (getMemory(IRQ_VECTOR+1) << 8) | getMemory(IRQ_VECTOR);
         cycle(6);
     }
@@ -1702,7 +1702,7 @@ void Chip::executeOpcode(){
             CPU_I = true;
             pushToStack((pc&0xFF00) >> 8);
             pushToStack(pc&0x00FF);
-            pushToStack(CPU_S_GET() | 0x8); //send B flag
+            pushToStack(CPU_S_GET(false, true) | 0x8); //send B flag
             pc = (getMemory(IRQ_VECTOR+1) << 8) | getMemory(IRQ_VECTOR);
             //printf("New PC after BReaK: %X = %X\n", pc, getMemory(pc, false));
             cycle(6);
@@ -1944,7 +1944,7 @@ void Chip::executeOpcode(){
         }
 
         case codePHP:{
-            pushToStack(CPU_S_GET());
+            pushToStack(CPU_S_GET(true, true));
             pc ++;
             cycle(3);
             break;
@@ -1960,7 +1960,7 @@ void Chip::executeOpcode(){
         }
 
         case codePLP:{
-            CPU_S_SET(popFromStack());
+            CPU_S_SET(popFromStack(), false, true);
             pc ++;
             cycle(4);
             break;
@@ -1993,7 +1993,7 @@ void Chip::executeOpcode(){
         }
 
         case codeRTI:{
-            CPU_S_SET(popFromStack());
+            CPU_S_SET(popFromStack(), false, true);
             unsigned short low = popFromStack();
             unsigned short high = popFromStack();
             pc = (high << 8) | low;

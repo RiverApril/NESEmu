@@ -165,7 +165,6 @@ using namespace std;
 #define codeTXS 0x9A
 #define codeTYA 0x98
 
-#define EXIT_BREAK 0
 #define EXIT_ERR_UNKNOWN_OPCODE 1
 #define EXIT_ERR_STACK_OVERFLOW 2
 #define EXIT_ERR_STACK_UNDERFLOW 3
@@ -233,16 +232,16 @@ public:
 #define CPU_V CPU_Flags.bits.bit6
 #define CPU_N CPU_Flags.bits.bit7
 
-    void CPU_S_SET(unsigned char v){
-        CPU_Flags.byte = v;//&(~0x10);
-        CPU_Flag4 = false;
-        CPU_Flag5 = true;
+    void CPU_S_SET(unsigned char v, bool f4, bool f5){
+        CPU_Flags.byte = v;
+        CPU_Flag4 = f4;
+        CPU_Flag5 = f5;
     }
 
-    unsigned char CPU_S_GET(){
-        CPU_Flag4 = false;
-        CPU_Flag5 = true;
-        return CPU_Flags.byte;//&(~0x10);
+    unsigned char CPU_S_GET(bool f4, bool f5){
+        CPU_Flag4 = f4;
+        CPU_Flag5 = f5;
+        return CPU_Flags.byte;
     }
 
 

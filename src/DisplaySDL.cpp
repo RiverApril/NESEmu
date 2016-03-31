@@ -14,14 +14,14 @@ DisplaySDL::DisplaySDL(const char* title, int width, int height) {
 	this->title = title;
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) < 0){
-		printf("SDL Init Failed: %s\n", SDL_GetError());
+		fprintf(stderr, "SDL Init Failed: %s\n", SDL_GetError());
 		errored = true;
 		return;
 	}
 
 	window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_SHOWN);
 	if (window == NULL){
-		printf("SDL Window Failed: %s\n", SDL_GetError());
+		fprintf(stderr, "SDL Window Failed: %s\n", SDL_GetError());
 		errored = true;
 		return;
 	}

@@ -143,7 +143,7 @@ int main(int argc, const char * argv[]) {
         printf("PC set to %X from manual input\n", chip.pc);
     }else{
         chip.setPCToResetVector();
-        printf("PC set to %X from 2 bytes at %X\n", chip.pc, RESET_VECTOR);
+        printf("PC set to %X from reset vector at %X\n", chip.pc, RESET_VECTOR);
     }
 
     display = new DisplaySDL("NES-Emu", 0x220, 0x200);
@@ -158,7 +158,7 @@ int main(int argc, const char * argv[]) {
         try{
             
             if(display->mouseDown){
-                printf("(%d, %d) Memory: [%4X] = %2X\n", display->mouseX, display->mouseY, display->mouseY*0x100+display->mouseX, getMemoryPassive(display->mouseY*0x100+display->mouseX));
+                printf("(%d, %d) Memory: [%4X] = %2X\n", (display->mouseX/2), (display->mouseY/2), (display->mouseY/2)*0x100+(display->mouseX/2), getMemoryPassive((display->mouseY/2)*0x100+(display->mouseX/2)));
             }
 
             if(chipRunning){
@@ -176,8 +176,25 @@ int main(int argc, const char * argv[]) {
                 display->drawPixelAt(pcx, pcy, 0xFF, 0, 0, 0xFF, 2, 2);
                 display->drawPixelAt(0, pcy, 0xFF, 0, 0, 0x80, pcx, 2);
                 display->drawPixelAt(pcx, 0, 0xFF, 0, 0, 0x80, 2, pcy);
-
-
+                
+                
+                fprintf(stdout, "%04X  ", chip.pc);
+                switch(chip.opcodeLength(chip.opcode)){
+                    case 1:
+                        fprintf(stdout, "%02X      ", chip.opcode);
+                        break;
+                    case 2:
+                        fprintf(stdout, "%02X %02X   ", chip.opcode, chip.byteAfterOpcode);
+                        break;
+                    case 3:
+                        fprintf(stdout, "%02X %02X %02X", chip.opcode, chip.byteAfterOpcode, chip.byte2AfterOpcode);
+                        break;
+                }
+                fprintf(stdout, "  %s", chip.opcodeName(chip.opcode));
+                fprintf(stdout, "   ");
+                fprintf(stdout, "A:%02X X:%02X Y:%02X P:%02X SP:%02X   ", chip.A, chip.X, chip.Y, chip.CPU_S_GET(false, true), chip.stackPointer);
+                
+                /*
                 fprintf(stdout, "%04d pc:%04X SP:%02X  A:%02X X:%02X Y:%02X  P:%02X {N%dV%d?%dB%dD%dI%dZ%dC%d} %s (%02X) ", tick, chip.pc, chip.stackPointer, chip.A, chip.X, chip.Y, chip.CPU_S_GET(), chip.CPU_N, chip.CPU_V, chip.CPU_Flag5, chip.CPU_Flag4, chip.CPU_D, chip.CPU_I, chip.CPU_Z, chip.CPU_C, chip.opcodeName(chip.opcode), chip.opcode);
 
                 unsigned char len = chip.opcodeLength(chip.opcode);
@@ -193,10 +210,10 @@ int main(int argc, const char * argv[]) {
                         fprintf(stdout, "[%02X %02X]", chip.byteAfterOpcode, chip.byte2AfterOpcode);
                         break;
                     default:
-                        fprintf(stdout, "LEN: %d", len);
+                        fprintf(stderr, "LEN: %d", len);
                         break;
 
-                }
+                }*/
 
                 fprintf(stdout, "\n");
 
@@ -230,9 +247,6 @@ int main(int argc, const char * argv[]) {
         }catch(int EXIT_CODE){
             chipRunning = false;
             switch (EXIT_CODE) {
-                case EXIT_BREAK:
-                    fprintf(stderr, "\nEXIT - Break on Opcode: %02X\n", chip.ERR_META);
-                    break;
                 case EXIT_ERR_UNKNOWN_OPCODE:
                     fprintf(stderr, "\nERR - Unknown Opcode: %02X\n", chip.ERR_META);
                     break;
