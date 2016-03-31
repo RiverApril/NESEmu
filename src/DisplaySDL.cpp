@@ -27,7 +27,7 @@ DisplaySDL::DisplaySDL(const char* title, int width, int height) {
 	}
 	screenSurface = SDL_GetWindowSurface(window);
 
-	startTicks = clock();
+	startTicks = 0;
 
 }
 
@@ -58,6 +58,7 @@ void DisplaySDL::drawGridAt(const unsigned char* grid, int width, int height, un
 	streached.w = drawWidth;
 	streached.h = drawHeight;
 	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
+	delete rgbGfx;
 }
 
 void DisplaySDL::drawGridAt(unsigned char (*getPoint)(int), int width, int height, unsigned char multiplier, int drawX, int drawY, int drawWidth, int drawHeight, int smoothOn, int smoothOff){
@@ -77,6 +78,7 @@ void DisplaySDL::drawGridAt(unsigned char (*getPoint)(int), int width, int heigh
 	streached.w = drawWidth;
 	streached.h = drawHeight;
 	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
+	delete rgbaGfx;
 }
 
 void DisplaySDL::drawPixelAt(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a, unsigned int xScale, unsigned int yScale){
@@ -92,6 +94,7 @@ void DisplaySDL::drawPixelAt(unsigned int x, unsigned int y, unsigned char r, un
 	streached.w = xScale;
 	streached.h = yScale;
 	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
+	delete rgbaGfx;
 }
 
 
@@ -101,23 +104,20 @@ void DisplaySDL::draw(){
 
 	frames++;
 
+
 }
 
 void DisplaySDL::update(bool p1Keys[8], bool p2Keys[8]){
-
+	SDL_SetWindowTitle(window, (title+" - FPS: "+std::to_string(displayFPS)).c_str());
 	
-	int currentTicks = clock() - startTicks;
-
-	if (currentTicks < TICKS_PER_FRAME){
-		SDL_Delay(TICKS_PER_FRAME - currentTicks);
-	}
-	startTicks = clock();
-	if (frames > FPS_LIMIT){
+		
+	int currentTicks = SDL_GetTicks() - startTicks;
+	
+	if (currentTicks >= 1000){
+		startTicks = SDL_GetTicks();
 		displayFPS = frames;
 		frames = 0;
 	}
-
-	SDL_SetWindowTitle(window, (title+" - FPS: "+std::to_string(displayFPS)).c_str());
 	
 	
 	 
@@ -129,9 +129,11 @@ void DisplaySDL::update(bool p1Keys[8], bool p2Keys[8]){
 
 			case SDL_QUIT:
 				quit = true;
+				break;
 
 			case SDL_KEYDOWN:
 				state = true;
+				//intentionally no break
 			case SDL_KEYUP:
 				switch (event.key.keysym.sym){
 					
@@ -165,9 +167,17 @@ void DisplaySDL::update(bool p1Keys[8], bool p2Keys[8]){
 						break;
 				}
 				break;
+				
+			case SDL_MOUSEBUTTONDOWN:
+				mouseDown = true;
+				break;
+			case SDL_MOUSEBUTTONUP:
+				mouseDown = false;
+				break;
 
 			default:
 				break;
 		}
 	}
+	SDL_GetMouseState(&mouseX, &mouseY);
 }

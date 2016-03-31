@@ -1,12 +1,14 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include "Chip.hpp"
 #include "DisplaySDL.hpp"
 
 using namespace std;
 
 Chip chip;
+DisplaySDL* display;
 
 void printMemory(unsigned char* memory, unsigned int memoryMin, unsigned int memoryDisplayAmount){
     for(unsigned int i=memoryMin;i<memoryMin+memoryDisplayAmount;i++){
@@ -15,7 +17,7 @@ void printMemory(unsigned char* memory, unsigned int memoryMin, unsigned int mem
     fprintf(stderr, "\n");
 }
 
-bool loadFile(const char* path, Chip* chip){
+bool loadFile(const char* path, Chip& chip){
     ifstream file;
     file.open(path, ios::binary | ios::in);
 
@@ -40,39 +42,33 @@ bool loadFile(const char* path, Chip* chip){
             return false;
         }
 
-        unsigned int PRG_ROMSize = header[4]; // 0x4000 (16 KB) units
-        unsigned int CHR_ROMSize = header[5]; // 0x2000 (8 KB) units
-
-        unsigned int flags6 = header[6];
-        unsigned int flags7 = header[7];
-
-        unsigned int PRG_RAMSize = header[8]; // 0x2000 (8 KB) units
-        if(PRG_RAMSize == 0){
-            PRG_RAMSize = 1;
-        }
-
-        unsigned int flags9 = header[9];
-        unsigned int flags10 = header[10];
-
-        /*for(unsigned int i=0x10;i<memorySize-startIndex;i++){
-            chip.setMemory(i+startIndex, (unsigned char)buffer[i]);
-        }*/
-
-        fprintf(stderr, "PRG ROM Size: %X * 4000 = %X\n", PRG_ROMSize, PRG_ROMSize*0x4000);
-        fprintf(stderr, "CHR ROM Size: %X * 2000 = %X\n", CHR_ROMSize, CHR_ROMSize*0x2000);
+        unsigned int NROM_Type = header[4];
 
         unsigned int loc;
-        unsigned int size;
 
         loc = 0x10;
-        size = (PRG_ROMSize*0x4000);
-        for(unsigned int i=0; i<size; i++){
-            chip->setMemory(0xC000+i, (unsigned char)buffer[loc + i]);
+        
+        if(NROM_Type == 1){ //NROM 128
+            printf("NROM 128\n");
+            for(unsigned int i=0; i<0x4000; i++){
+                chip.setMemory(0x8000+i, (unsigned char)buffer[loc]);
+                chip.setMemory(0xC000+i, (unsigned char)buffer[loc]);
+                loc++;
+            }
+        } else if(NROM_Type == 2){ //NROM 256
+            printf("NROM 256\n");
+            for(unsigned int i=0; i<0x8000; i++){
+                chip.setMemory(0x8000+i, (unsigned char)buffer[loc]);
+                loc++;
+            }
+        } else {
+            fprintf(stderr, "NROM type invailid: %d\n", NROM_Type);
+            return false;
         }
-        loc += size;
-        size = (CHR_ROMSize*0x2000);
-        for(unsigned int i=0; i<size; i++){
-            chip->setCharROM(i, (unsigned char)buffer[loc + i]);
+        
+        for(unsigned int i=0; i<0x2000; i++){
+            chip.setCharROM(i, (unsigned char)buffer[loc]);
+            loc++;
         }
 
 
@@ -112,13 +108,10 @@ bool dumpMemoryToFile(const char* path, unsigned char (*getMem)(int), unsigned i
 }
 
 int main(int argc, const char * argv[]) {
+    
     const char* runPath = "";
-    const char* compilePath = "";
     if(argc > 1){
         runPath = argv[1];
-    }
-    if(compilePath[0] == '\0'){
-        //Compilation not implemented.
     }
     if(runPath[0] == '\0'){
         fprintf(stderr, "Please pecify a program to run.\n");
@@ -126,15 +119,34 @@ int main(int argc, const char * argv[]) {
     }
     fprintf(stderr, "Loading program: '%s'\n", runPath);
     chip.reset(true, true, true);
-    bool success = loadFile(runPath, &chip);
+    bool success = loadFile(runPath, chip);
     if(success){
         fprintf(stderr, "Program loaded, running.\n");
     }else{
         fprintf(stderr, "Failed to load program.\n");
         return 0;
     }
+    if(argc > 2){
+        if(argv[2][0] == '0' && (argv[2][1] == 'x' || argv[2][1] == 'X')){
+            unsigned int x;
+            std::stringstream ss;
+            ss << std::hex << (argv[2]+2);
+            ss >> x;
+            chip.pc = (unsigned short)x;
+        }else{
+            unsigned int x;
+            std::stringstream ss;
+            ss << argv[2];
+            ss >> x;
+            chip.pc = (unsigned short)x;
+        }
+        printf("PC set to %X from manual input\n", chip.pc);
+    }else{
+        chip.setPCToResetVector();
+        printf("PC set to %X from 2 bytes at %X\n", chip.pc, RESET_VECTOR);
+    }
 
-    DisplaySDL* display = new DisplaySDL("NES-Emu", 0x220, 0x200);
+    display = new DisplaySDL("NES-Emu", 0x220, 0x200);
 
     bool chipRunning = true;
 
@@ -144,7 +156,10 @@ int main(int argc, const char * argv[]) {
 
     while(!(display->quit || display->errored)) {
         try{
-            display->update(chip.controllerP1Buffer, chip.controllerP2Buffer);
+            
+            if(display->mouseDown){
+                printf("(%d, %d) Memory: [%4X] = %2X\n", display->mouseX, display->mouseY, display->mouseY*0x100+display->mouseX, getMemoryPassive(display->mouseY*0x100+display->mouseX));
+            }
 
             if(chipRunning){
 
@@ -163,7 +178,7 @@ int main(int argc, const char * argv[]) {
                 display->drawPixelAt(pcx, 0, 0xFF, 0, 0, 0x80, 2, pcy);
 
 
-                fprintf(stdout, "%04d pc:%04X SP:%02X  A:%02X X:%02X Y:%02X  P:%02X {N%dV%d?%d?%dD%dI%dZ%dC%d} %s (%02X) ", tick, chip.pc, chip.stackPointer, chip.A, chip.X, chip.Y, chip.CPU_S_GET(), chip.CPU_N, chip.CPU_V, chip.CPU_Flag5, chip.CPU_Flag4, chip.CPU_D, chip.CPU_I, chip.CPU_Z, chip.CPU_C, chip.opcodeName(chip.opcode), chip.opcode);
+                fprintf(stdout, "%04d pc:%04X SP:%02X  A:%02X X:%02X Y:%02X  P:%02X {N%dV%d?%dB%dD%dI%dZ%dC%d} %s (%02X) ", tick, chip.pc, chip.stackPointer, chip.A, chip.X, chip.Y, chip.CPU_S_GET(), chip.CPU_N, chip.CPU_V, chip.CPU_Flag5, chip.CPU_Flag4, chip.CPU_D, chip.CPU_I, chip.CPU_Z, chip.CPU_C, chip.opcodeName(chip.opcode), chip.opcode);
 
                 unsigned char len = chip.opcodeLength(chip.opcode);
 
@@ -207,7 +222,9 @@ int main(int argc, const char * argv[]) {
                 fprintf(stderr, "]\n");*/
 
             }
-
+            
+            display->update(chip.controllerP1Buffer, chip.controllerP2Buffer);
+            
             display->draw();
 
         }catch(int EXIT_CODE){

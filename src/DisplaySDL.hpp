@@ -20,6 +20,9 @@ struct DisplaySDL {
 
 	int width, height;
 	std::string title;
+	
+	int mouseX, mouseY;
+	int mouseDown = false;
 
 	bool errored = false;
 	bool quit = false;

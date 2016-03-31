@@ -172,6 +172,10 @@ using namespace std;
 #define EXIT_ERR_UNKNOWN_ADDRESS_MODE 4
 #define EXIT_ERR_MEMORY_ADDRESS_OUT_OF_RANGE 5
 
+#define RESET_VECTOR 0xFFFC
+#define BRK_VECTOR 0xFFFE
+#define IRQ_VECTOR 0xFFFE
+#define NMI_VECTOR 0xFFFA
 
 struct BitField {
     bool bit0 : 1;
@@ -214,6 +218,8 @@ public:
     //X and Y Registers
     unsigned char X = 0x00;
     unsigned char Y = 0x00;
+    
+    unsigned int cpuCycles = 0;
 
 
     BitByteUnion CPU_Flags;
@@ -228,11 +234,15 @@ public:
 #define CPU_N CPU_Flags.bits.bit7
 
     void CPU_S_SET(unsigned char v){
-        CPU_Flags.byte = (v|0x20);//&(~0x10);
+        CPU_Flags.byte = v;//&(~0x10);
+        CPU_Flag4 = false;
+        CPU_Flag5 = true;
     }
 
     unsigned char CPU_S_GET(){
-        return (CPU_Flags.byte|0x20);//&(~0x10);
+        CPU_Flag4 = false;
+        CPU_Flag5 = true;
+        return CPU_Flags.byte;//&(~0x10);
     }
 
 
@@ -339,7 +349,7 @@ public:
     // C000 - FFFF : Program RAM
 
 public:
-    unsigned char stackPointer = 0xFD;
+    unsigned char stackPointer = 0xFF;
     unsigned char stack[0x100] = {0};
 
     unsigned char opcode;
@@ -350,6 +360,10 @@ public:
     void stopPPU();
 
     void reset(bool resetRAM, bool resetPPUandAPUandIO, bool resetPRGRAM);
+    
+    void cycle(unsigned char cycles);
+    
+    void setPCToResetVector();
 
     const char* opcodeName(unsigned char code);
 
@@ -372,6 +386,26 @@ public:
     const unsigned char mem_A_ZP_ZPY_AB_ABY(unsigned char mode);
 
     const unsigned char mem_I_ZP_ZPY_AB_ABY(unsigned char mode);
+
+    const unsigned char time_I_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode);
+
+    const unsigned char time_larger_I_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode);
+
+    const unsigned char time_other_I_ZP_ZPX_AB_ABX_ABY_IX_IY(unsigned char mode);
+
+    const unsigned char time_I_ZP_AB(unsigned char mode);
+
+    const unsigned char time_ZP_ZPX_AB(unsigned char mode);
+
+    const unsigned char time_ZP_ZPY_AB(unsigned char mode);
+
+    const unsigned char time_A_ZP_ZPX_AB_ABX(unsigned char mode);
+
+    const unsigned char time_I_ZP_ZPX_AB_ABX(unsigned char mode);
+
+    const unsigned char time_I_ZP_ZPY_AB_ABY(unsigned char mode);
+
+    const unsigned char time_AB_I(unsigned char mode);
 
     void setmem_A_ZP_ZPX_AB_ABX(unsigned char mode, unsigned char value);
 
@@ -408,6 +442,8 @@ public:
     void pushToStack(unsigned char value);
 
     unsigned char popFromStack();
+    
+    void interupt(unsigned short addr);
 
     void prepareOpcode();
     void executeOpcode();
