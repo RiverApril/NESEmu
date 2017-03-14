@@ -2,7 +2,7 @@
 #ifndef __NESEmu__DisplaySDL__
 #define __NESEmu__DisplaySDL__
 
-#include "SDL2/SDL.h"
+#include <SDL2/SDL.h>
 #include <string>
 
 #define keyA 0

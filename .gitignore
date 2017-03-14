@@ -12,3 +12,5 @@ obj/*
 
 
 instr_test-v4/*
+
+NESEmu_BUILD*

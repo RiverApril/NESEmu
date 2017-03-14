@@ -58,7 +58,7 @@ void DisplaySDL::drawGridAt(const unsigned char* grid, int width, int height, un
 	streached.w = drawWidth;
 	streached.h = drawHeight;
 	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
-	delete rgbGfx;
+	delete[] rgbGfx;
 }
 
 void DisplaySDL::drawGridAt(unsigned char (*getPoint)(int), int width, int height, unsigned char multiplier, int drawX, int drawY, int drawWidth, int drawHeight, int smoothOn, int smoothOff){
@@ -78,7 +78,7 @@ void DisplaySDL::drawGridAt(unsigned char (*getPoint)(int), int width, int heigh
 	streached.w = drawWidth;
 	streached.h = drawHeight;
 	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
-	delete rgbaGfx;
+	delete[] rgbaGfx;
 }
 
 void DisplaySDL::drawPixelAt(unsigned int x, unsigned int y, unsigned char r, unsigned char g, unsigned char b, unsigned char a, unsigned int xScale, unsigned int yScale){
@@ -94,7 +94,7 @@ void DisplaySDL::drawPixelAt(unsigned int x, unsigned int y, unsigned char r, un
 	streached.w = xScale;
 	streached.h = yScale;
 	SDL_BlitScaled(gfxSurface, NULL, screenSurface, &streached);
-	delete rgbaGfx;
+	delete[] rgbaGfx;
 }
 
 
